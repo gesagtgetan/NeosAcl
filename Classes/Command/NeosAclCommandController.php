@@ -55,6 +55,23 @@ class NeosAclCommandController extends CommandController
     }
 
     /**
+     * Delete a dynamic role, its subtree tags and its workspace assignments.
+     *
+     * @param string $name Name of the dynamic role without the "Dynamic:" prefix
+     */
+    public function removeCommand(string $name): void
+    {
+        $dynamicRole = $this->dynamicRoleRepository->findOneByName($name);
+        if ($dynamicRole === null) {
+            $this->outputLine('<error>There is no dynamic role named "%s".</error>', [$name]);
+            $this->quit(1);
+        }
+        $this->securityContext->withoutAuthorizationChecks(fn () => $this->dynamicRoleApplier->revoke($dynamicRole));
+        $this->dynamicRoleRepository->remove($dynamicRole);
+        $this->outputLine('Deleted dynamic role "%s". Remove it from user accounts with user:removerole.', [$dynamicRole->getRoleIdentifier()]);
+    }
+
+    /**
      * Show which node aggregates carry the restriction tag and the tags of the dynamic roles.
      *
      * Reads the live workspace, so a grant that an editor does not see yet points to a

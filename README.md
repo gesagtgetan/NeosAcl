@@ -66,7 +66,7 @@ Subtree tags are content of the live workspace. An editor's personal workspace s
 changed grant after its next rebase, which the Neos UI offers when live has changed.
 
 `./flow neosacl:list` shows which node aggregates carry the restriction tag and the tags
-of every dynamic role.
+of every dynamic role. `./flow neosacl:remove <name>` deletes a role from the command line.
 
 ## Changes compared to version 2 (Neos 7 and 8)
 
