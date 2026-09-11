@@ -36,3 +36,9 @@ Neos:
       routes:
         'Sandstorm.NeosAcl':
           position: 'before Neos.Neos'
+
+Sandstorm:
+  NeosAcl:
+    userInterface:
+      # Show only editable documents and their ancestors in the document tree of the Neos UI
+      hideUneditableDocuments: true

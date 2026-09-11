@@ -16,6 +16,9 @@ Main features:
   limited to selected dimensions, and can make its members collaborators of shared
   workspaces.
 - Permissions are purely additive: unrestricted editors and administrators keep editing everything.
+- The document tree of the Neos UI shows a member of a dynamic role only the subtrees they may
+  edit, plus the path leading there (setting `Sandstorm.NeosAcl.userInterface.hideUneditableDocuments`).
+  Users without a dynamic role see the whole tree.
 
 ![listing](./Documentation/listing.png)
 
@@ -52,6 +55,12 @@ matches a tag the node carries or inherits.
   specializations. Without a selection the node is tagged in every dimension it covers.
 - Selected shared workspaces get a `COLLABORATOR` assignment for the role, the same
   mechanism the Workspaces module uses.
+
+- The tree filter overrides the FlowQuery operations `neosUiDefaultNodes` and
+  `neosUiFilteredChildren` of the Neos UI and wraps its `ReloadNodesQueryHandler` (used after
+  publishing and discarding), dropping documents the current user cannot edit unless an
+  editable document lies below them. It is cosmetic: other documents stay reachable by URL,
+  read only.
 
 Subtree tags are content of the live workspace. An editor's personal workspace sees a
 changed grant after its next rebase, which the Neos UI offers when live has changed.
