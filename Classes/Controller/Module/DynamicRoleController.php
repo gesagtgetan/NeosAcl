@@ -72,6 +72,16 @@ class DynamicRoleController extends AbstractModuleController
         $this->view->assign('dynamicRoles', $listItems);
     }
 
+    public function initializeCreateAction(): void
+    {
+        $this->allowAllListArgumentValues();
+    }
+
+    public function initializeUpdateAction(): void
+    {
+        $this->allowAllListArgumentValues();
+    }
+
     public function newAction(): void
     {
         $this->view->assignMultiple([
@@ -152,6 +162,17 @@ class DynamicRoleController extends AbstractModuleController
         $this->dynamicRoleRepository->remove($dynamicRole);
         $this->addFlashMessage(sprintf('Deleted the dynamic role "%s".', $dynamicRole->getRoleIdentifier()));
         $this->redirect('index');
+    }
+
+    /**
+     * The trusted properties of the form only cover the checkboxes that were rendered on the
+     * server; documents expanded in the browser add more values to the same list.
+     */
+    private function allowAllListArgumentValues(): void
+    {
+        foreach (['parentRoleNames', 'selectedWorkspaces', 'selectedDimensionSpacePoints', 'selectedNodes'] as $argumentName) {
+            $this->arguments->getArgument($argumentName)->getPropertyMappingConfiguration()->allowAllProperties();
+        }
     }
 
     /**
