@@ -1,16 +1,21 @@
-# Sandstorm Neos ACL
+# Sandstorm.NeosAcl
 
-This package implements dynamic Access Control Lists for Neos Roles.
+Dynamic access control lists for Neos CMS 9: restrict editors to parts of the page tree
+through roles that administrators manage in a backend module.
 
-The development of this package was sponsored by [ujamii](https://www.ujamii.com/) and [queo](https://www.queo.de). 
+The development of the original package was sponsored by [ujamii](https://www.ujamii.com/)
+and [queo](https://www.queo.de). Version 3 is a rewrite for the Neos 9 content repository;
+the Neos 7 and 8 versions live on the 2.x branch.
 
 Main features:
 
-- Switch `RestrictedEditor` to an allowlist-only permission approach. By installing this package, the `RestrictedEditor` is
-  no longer allowed to change any content.
-- Configure dynamic roles through a Neos backend module.
-- Permissions on the node tree, workspaces and dimensions possible.
-- Permissions work predictably with sane defaults and purely additive logic.
+- Switch `Neos.Neos:RestrictedEditor` to an allowlist: after `./flow neosacl:setup` a
+  restricted editor cannot edit anything until a dynamic role grants a subtree.
+- Configure dynamic roles through the backend module "Dynamic Roles".
+- A dynamic role grants editing of selected documents and their descendants, optionally
+  limited to selected dimensions, and can make its members collaborators of shared
+  workspaces.
+- Permissions are purely additive: unrestricted editors and administrators keep editing everything.
 
 ![listing](./Documentation/listing.png)
 
@@ -18,104 +23,60 @@ Main features:
 
 ## Installation
 
-1. Install the package:
-
 ```
 composer require sandstorm/neosacl
-```
-
-2. Run the migrations
-
-```
 ./flow doctrine:migrate
+./flow neosacl:setup
 ```
 
-3. Log in with an admin account and visit the new menu entry 'Dynamic Roles'
+`neosacl:setup` tags every site node in the live workspace with the subtree tag
+`neosacl-restricted`. Run it again after adding a site. Then log in as administrator and
+open Administration > Dynamic Roles.
 
+Users get a dynamic role like any other role, e.g. `./flow user:addrole jane Dynamic:Marketing`.
 
-## Development 
+## How it works
 
-**Initial (Package) Setup**
+Neos 9 authorizes node editing through subtree tags: an `EditNodePrivilege` target names a
+tag, and a node may be edited only if one of the user's roles is granted a target that
+matches a tag the node carries or inherits.
 
-- Clone this package as `Sandstorm.NeosAcl` in the DistributionPackages of a Neos 4.3 or later installation
-- Add it to `composer.json` as `"sandstorm/neosacl": "*"`
-- Run `composer update`
- 
-**Initial React Setup**
+- `Policy.yaml` of this package defines the target `Sandstorm.NeosAcl:EditAllNodes` for the
+  tag `neosacl-restricted` and grants it to `Neos.Neos:Editor` and `Neos.Neos:Administrator`.
+  Because every site root carries that tag, every other role is denied.
+- Each dynamic role `Dynamic:<name>` owns the tag `neosacl-<name>`. Saving the role in the
+  module tags the selected node aggregates in the live workspace and the role is added to
+  the policy at runtime (`PolicyService::configurationLoaded` signal) together with the
+  target `Dynamic:<name>.EditNodes` matching its tag. Members may then edit those subtrees.
+- Selected dimensions limit the tagging to the chosen dimension space points and their
+  specializations. Without a selection the node is tagged in every dimension it covers.
+- Selected shared workspaces get a `COLLABORATOR` assignment for the role, the same
+  mechanism the Workspaces module uses.
 
-```
-cd Resources/Private/react-acl-editor
-yarn
-yarn dev
-```
+Subtree tags are content of the live workspace. An editor's personal workspace sees a
+changed grant after its next rebase, which the Neos UI offers when live has changed.
 
-Then, log into the backend of Neos, and visit the module "Dynamic Roles".
+`./flow neosacl:list` shows which node aggregates carry the restriction tag and the tags
+of every dynamic role.
 
+## Changes compared to version 2 (Neos 7 and 8)
 
-### Internal Implementation Details
+- The privilege levels "view", "view + edit" and "view + edit + create + delete" are gone.
+  A dynamic role always grants editing, which in Neos 9 covers creating, removing, moving
+  and tagging nodes below the selected documents. Restricting what the node tree shows is
+  not possible with the Neos 9 authorization model.
+- The per-node node type filter is gone.
+- Dimension presets became dimension space points. Preset selections of existing roles are
+  dropped by the migration; workspace and node selections are kept.
+- Role names are limited to 28 characters of letters, digits and underscores and cannot be
+  changed after creation, because the subtree tag derives from the name.
+- The ACL inspector module, the cache frontends patching Flow's AOP caches and the React
+  based editor were removed.
 
-#### Implementing Dynamic Node Privileges and MethodPrivileges
+The PostgreSQL migration is untested.
 
-The basic idea was the following: Hook into `PolicyService::emitConfigurationLoaded`, and modify the `$configuration` array (introduce new roles
-and privilegeTargets). This basically works **at runtime** - however there is a problem with dynamic MethodPrivilege enforcement, which is
-explained below and by the following diagram:
+## Development
 
-![Concept](./Documentation/DynamicMethodPrivileges.svg)
-
-#### How do Method Privileges work
-
-- Background: An implementation of `PointcutFilterInterface` can - during compile time of Flow - decide which classes
-  and methods match for a certain aspect.
-  - This is used in `PolicyEnforcementAspect` (which is the central point for enforcing **MethodPrivileges**).
-  - There, the `MethodPrivilegePointcutFilter` is referenced.
-  - The `MethodPrivilegePointcutFilter` asks the `PolicyService` for all configured `MethodPrivilege`s - and ensures
-    AOP proxies are built for these methods.
-- **Side Effect**: Now, during building up the pointcut filters, the `MethodPrivilegePointcutFilter` **additionally** builds up
-  a data structure `methodPermissions` - which remembers which `MethodPrivileges` are registered for which method.
-  - This data structure is stored **persistently in the `Flow_Security_Authorization_Privilege_Method` cache**.
-  - At runtime, for a class which is intercepted by `PolicyEnforcementAspect`, all configured `MethodPrivilege`s are
-    invoked - and they have to quickly decide if they match **this particular call-site**.
-  - This is done using the `methodPermissions` data structure from the `Flow_Security_Authorization_Privilege_Method` cache.
-
-#### What's the problem with dynamically added MethodPrivileges
-
-- If a `MethodPrivilege` is defined dynamically at runtime, then the `methodPermissions` data structure is missing
-  the information that this new privilege should be invoked for certain methods.
-- NOTE: You can only dynamically add `MethodPrivileges` for call-sites **which are already instrumented by AOP**;
-  because otherwise the code will never get invoked (because of missing proxies).
-
-We are mostly working with `EditNodePrivilege` etc. - so why does this apply there?
-
-- `EditNodePrivilege` has an internal `MethodPrivilege` **which takes care of the method call enforcement part**;
-  i.e. preventing you to call e.g. `NodeInterface::setProperty()` if you do not have the permission to do so.
-
-Furthermore, to make this idea work, the `Policy.yaml` of this package defines a catch-all `Sandstorm.NeosAcl:EditAllNodes`
-PrivilegeTarget - so AOP will instrument the corresponding methods of `NodeInterface`. This catch-all makes sense
-in any case, because this switches the security framework [to an allowlist-only approach](https://docs.neos.io/guide/manual/backend-permissions/real-world-examples#user-rights-for-part-of-a-page-tree)
-- making it easier to grasp.
-
-#### The goal
-
-In order to make the dynamic policy enforcement work, we need to add custom stuff to the `methodPermissions` - for
-the dynamically added roles.
-
-#### Implementation
-
-The post-processing of the `methodPermissions` is done using a custom cache frontend (`SecurityAuthorizationPrivilegeMethodCacheFrontend`).
-
-#### Implementing dynamic AOP Runtime Expressions
-
-Method privileges internally can use dynamic AOP Runtime Expressions (in case you check for method parameters). Especially
-the `MethodPrivilege` - which is attached to the `RemoveNodePrivilege` - uses the following expression code:
-
-```php
-return 'within(' . NodeInterface::class . ') && method(.*->setRemoved(removed == true))';
-```
-
-The `removed == true` part is a so-called *AOP Runtime Expression*. 
-
-This is internally implemented using the `Flow_Aop_RuntimeExpressions` "cache", which is pre-filled again during the compile
-time (which is a nasty side-effect).
-
-Thus, in our case we need to again implement a custom cache frontend (`AopRuntimeExpressionsCacheFrontend`),
-using the runtime expressions of the base configuration, which exists properly.
+Clone this package as `Sandstorm.NeosAcl` into `DistributionPackages/` of a Neos 9
+installation, require `"sandstorm/neosacl": "@dev"` and run `composer update sandstorm/neosacl`.
+Unit tests live in `Tests/Unit` and need no database.

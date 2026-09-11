@@ -1,149 +1,98 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sandstorm\NeosAcl\Domain\Model;
 
-/*
- * This file is part of the Neos.ACLInspector package.
- */
-
-use Neos\Flow\Annotations as Flow;
 use Doctrine\ORM\Mapping as ORM;
-use Sandstorm\NeosAcl\Domain\Dto\MatcherConfiguration;
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
+use Neos\Flow\Annotations as Flow;
 
 /**
- * @Flow\Entity
+ * A role that is added to the Flow policy at runtime. Its name is immutable because
+ * the role identifier and the subtree tag derive from it.
  */
+#[Flow\Entity]
 class DynamicRole
 {
+    public const ROLE_IDENTIFIER_PREFIX = 'Dynamic:';
+
+    private const NAME_PATTERN = '/^[a-zA-Z0-9_]{1,28}$/';
+
+    protected string $name;
+
+    #[ORM\Column(length: 36)]
+    protected string $subtreeTag;
+
+    protected bool $abstract;
 
     /**
-     * @Flow\Validate(type="RegularExpression", options={"regularExpression"="/^\w+$/"})
-     * @var string
+     * @phpstan-var list<string>
      */
-    protected $name;
+    #[ORM\Column(type: 'flow_json_array')]
+    protected array $parentRoleNames;
 
     /**
-     * @var boolean
+     * @phpstan-var array<string, mixed>
      */
-    protected $abstract;
+    #[ORM\Column(type: 'flow_json_array')]
+    protected array $matcher;
 
     /**
-     * @ORM\Column(type="flow_json_array")
-     * @var array<string>
+     * @param list<string> $parentRoleNames
      */
-    protected $parentRoleNames;
+    public function __construct(string $name, bool $abstract, array $parentRoleNames, MatcherConfiguration $matcher)
+    {
+        if (preg_match(self::NAME_PATTERN, $name) !== 1) {
+            throw InvalidDynamicRoleException::forName($name);
+        }
+        $this->name = $name;
+        $this->subtreeTag = NeosAclSubtreeTag::forDynamicRoleName($name)->value;
+        $this->abstract = $abstract;
+        $this->parentRoleNames = $parentRoleNames;
+        $this->matcher = $matcher->toArray();
+    }
 
     /**
-     * @ORM\Column(type="flow_json_array")
-     * @var array
+     * @param list<string> $parentRoleNames
      */
-    protected $matcher = [];
+    public function update(bool $abstract, array $parentRoleNames, MatcherConfiguration $matcher): void
+    {
+        $this->abstract = $abstract;
+        $this->parentRoleNames = $parentRoleNames;
+        $this->matcher = $matcher->toArray();
+    }
 
-    const PRIVILEGE_VIEW = 'view';
-    const PRIVILEGE_VIEW_EDIT = 'view_edit';
-    const PRIVILEGE_VIEW_EDIT_CREATE_DELETE = 'view_edit_create_delete';
-
-    /**
-     * @var string
-     */
-    protected $privilege = self::PRIVILEGE_VIEW;
-
-    /**
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName($name)
+    public function getRoleIdentifier(): string
     {
-        $this->name = $name;
+        return self::ROLE_IDENTIFIER_PREFIX . $this->name;
     }
 
-    /**
-     * @return boolan
-     */
-    public function getAbstract()
+    public function getSubtreeTag(): SubtreeTag
+    {
+        return SubtreeTag::fromString($this->subtreeTag);
+    }
+
+    public function isAbstract(): bool
     {
         return $this->abstract;
     }
 
     /**
-     * @param boolan $abstract
+     * @return list<string>
      */
-    public function setAbstract($abstract)
-    {
-        $this->abstract = $abstract;
-    }
-
-    /**
-     * @return array
-     */
-    public function getParentRoleNames()
+    public function getParentRoleNames(): array
     {
         return $this->parentRoleNames;
     }
 
-    /**
-     * @param array $parentRoleNames
-     */
-    public function setParentRoleNames($parentRoleNames)
+    public function getMatcherConfiguration(): MatcherConfiguration
     {
-        $this->parentRoleNames = $parentRoleNames;
+        return MatcherConfiguration::fromArray($this->matcher);
     }
-
-    /**
-     * @return array
-     */
-    public function getMatcher()
-    {
-        return $this->matcher;
-    }
-
-    /**
-     * @param array $matcher
-     */
-    public function setMatcher($matcher)
-    {
-        $this->matcher = $matcher;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPrivilege()
-    {
-        return $this->privilege;
-    }
-
-    /**
-     * @param string $privilege
-     */
-    public function setPrivilege($privilege)
-    {
-        $this->privilege = $privilege;
-    }
-
-
-    public function getPrivilegeExplanation(): string
-    {
-        switch ($this->privilege) {
-            case self::PRIVILEGE_VIEW:
-                return 'view';
-            case self::PRIVILEGE_VIEW_EDIT:
-                return 'view, edit';
-            case self::PRIVILEGE_VIEW_EDIT_CREATE_DELETE:
-                return 'view, edit, create, delete';
-        }
-    }
-
-    public function getMatcherExplanationParts(): array
-    {
-        return MatcherConfiguration::fromJson($this->matcher)->renderExplanationParts();
-    }
-
 }

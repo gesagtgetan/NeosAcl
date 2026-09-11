@@ -1,14 +1,21 @@
 {
-    "description": "",
-    "type": "neos-package",
     "name": "sandstorm/neosacl",
+    "type": "neos-package",
+    "description": "Dynamic access control lists for Neos CMS roles, managed in a backend module",
+    "license": "MIT",
     "require": {
-        "neos/flow": "^7.0 || ^8.0 || dev-master",
-        "neos/fusion-afx": "*"
+        "php": "^8.2",
+        "neos/neos": "^9.0",
+        "neos/fusion-form": "*"
     },
     "autoload": {
         "psr-4": {
             "Sandstorm\\NeosAcl\\": "Classes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sandstorm\\NeosAcl\\Tests\\": "Tests/"
         }
     },
     "extra": {

@@ -1,0 +1,9 @@
+-
+  requestFilter: 'isPackage("Sandstorm.NeosAcl") && isFormat("html")'
+  viewObjectName: 'Neos\Fusion\View\FusionView'
+  options:
+    fusionPathPatterns:
+      - 'resource://Neos.Neos/Private/Fusion'
+      - 'resource://Neos.Fusion/Private/Fusion'
+      - 'resource://Neos.Fusion.Form/Private/Fusion'
+      - 'resource://Sandstorm.NeosAcl/Private/Fusion'

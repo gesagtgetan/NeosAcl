@@ -1,0 +1,99 @@
+prototype(Sandstorm.NeosAcl:Component.RoleForm) < prototype(Neos.Fusion:Component) {
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleFormData
+  formData = null
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleFormOptions
+  formOptions = null
+
+  @private {
+    isNew = ${props.formData.identifier == null}
+    indexUri = Neos.Fusion:UriBuilder {
+      action = 'index'
+    }
+  }
+
+  prototype(Neos.Fusion.Form:Neos.BackendModule.FieldContainer) {
+    translation.label {
+      package = 'Sandstorm.NeosAcl'
+      source = 'Main'
+    }
+  }
+
+  renderer = afx`
+    <Neos.Fusion.Form:Form
+      form.target.action={private.isNew ? 'create' : 'update'}
+      form.target.arguments.dynamicRole={private.isNew ? null : props.formData.identifier}
+      form.data.name={props.formData.name}
+      form.data.abstract={props.formData.abstract ? '1' : null}
+      form.data.parentRoleNames={props.formData.parentRoleNames}
+      form.data.selectedWorkspaces={props.formData.selectedWorkspaceNames}
+      form.data.selectedDimensionSpacePoints={props.formData.selectedDimensionSpacePoints}
+      form.data.selectedNodes={props.formData.selectedNodeAggregateIds}
+      attributes.class="neosacl-form"
+    >
+      <div class="neos-content neos-container-fluid">
+        <div class="neos-row-fluid">
+          <fieldset class="neos-span6">
+            <legend><Sandstorm.NeosAcl:Translation id="form.role" /></legend>
+
+            <Neos.Fusion.Form:Neos.BackendModule.FieldContainer @if={private.isNew} field.name="name" label="form.name">
+              <Neos.Fusion.Form:Textfield attributes.required attributes.pattern="[a-zA-Z0-9_]{1,28}" attributes.autofocus attributes.placeholder="MarketingEditors" />
+              <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.name.help" /></p>
+            </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>
+            <div @if={!private.isNew} class="neos-control-group">
+              <label class="neos-control-label"><Sandstorm.NeosAcl:Translation id="form.name" /></label>
+              <div class="neos-controls"><strong>Dynamic:{props.formData.name}</strong></div>
+            </div>
+
+            <Neos.Fusion.Form:Neos.BackendModule.FieldContainer label="form.abstract">
+              <Neos.Fusion.Form:Checkbox field.name="abstract" field.value="1">
+                <Sandstorm.NeosAcl:Translation id="form.abstract.help" />
+              </Neos.Fusion.Form:Checkbox>
+            </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>
+
+            <Neos.Fusion.Form:Neos.BackendModule.FieldContainer field.name="parentRoleNames" field.multiple={true} label="form.parentRoles">
+              <Neos.Fusion.Form:Select attributes.size="8">
+                <Neos.Fusion:Loop items={props.formOptions.parentRoles} itemName="roleOption">
+                  <Neos.Fusion.Form:Select.Option option.value={roleOption.identifier}>{roleOption.label}</Neos.Fusion.Form:Select.Option>
+                </Neos.Fusion:Loop>
+              </Neos.Fusion.Form:Select>
+              <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.parentRoles.help" /></p>
+            </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>
+          </fieldset>
+
+          <fieldset class="neos-span6">
+            <legend><Sandstorm.NeosAcl:Translation id="form.scope" /></legend>
+
+            <Neos.Fusion.Form:Neos.BackendModule.FieldContainer @if={!Array.isEmpty(props.formOptions.workspaces)} field.name="selectedWorkspaces" field.multiple={true} label="form.workspaces">
+              <Neos.Fusion:Loop items={props.formOptions.workspaces} itemName="workspaceOption">
+                <Neos.Fusion.Form:Checkbox field.value={workspaceOption.name}>{workspaceOption.title} <small>({workspaceOption.name})</small></Neos.Fusion.Form:Checkbox>
+              </Neos.Fusion:Loop>
+              <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.workspaces.help" /></p>
+            </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>
+
+            <Neos.Fusion.Form:Neos.BackendModule.FieldContainer @if={!Array.isEmpty(props.formOptions.dimensionSpacePoints)} field.name="selectedDimensionSpacePoints" field.multiple={true} label="form.dimensions">
+              <Neos.Fusion:Loop items={props.formOptions.dimensionSpacePoints} itemName="dimensionOption">
+                <Neos.Fusion.Form:Checkbox field.value={dimensionOption.value}>{dimensionOption.label}</Neos.Fusion.Form:Checkbox>
+              </Neos.Fusion:Loop>
+              <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.dimensions.help" /></p>
+            </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>
+          </fieldset>
+        </div>
+
+        <div class="neos-row-fluid">
+          <fieldset class="neos-span12">
+            <legend><Sandstorm.NeosAcl:Translation id="form.nodes" /></legend>
+            <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.nodes.help" /></p>
+            <Sandstorm.NeosAcl:Component.NodeTree nodes={props.formOptions.documentTree} childrenEndpoint={props.formOptions.childrenEndpoint} />
+          </fieldset>
+        </div>
+      </div>
+
+      <div class="neos-footer">
+        <a href={private.indexUri} class="neos-button"><Sandstorm.NeosAcl:Translation id="cancel" /></a>
+        <Neos.Fusion.Form:Button attributes.class="neos-button neos-button-primary">
+          <Sandstorm.NeosAcl:Translation id={private.isNew ? 'form.create' : 'form.save'} />
+        </Neos.Fusion.Form:Button>
+      </div>
+    </Neos.Fusion.Form:Form>
+  `
+}

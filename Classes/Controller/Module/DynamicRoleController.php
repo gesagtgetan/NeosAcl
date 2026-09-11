@@ -1,155 +1,219 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Sandstorm\NeosAcl\Controller\Module;
 
-/*
- * This file is part of the Sandstorm.NeosAcl package.
- */
-
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\Error\Messages\Message;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Mvc\Controller\ActionController;
-use Neos\Flow\Property\TypeConverter\ArrayConverter;
+use Neos\Flow\Mvc\Routing\UriBuilder;
+use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\Policy\PolicyService;
-use Neos\Flow\Security\Policy\Role;
-use Neos\Fusion\Core\Cache\ContentCache;
-use Sandstorm\NeosAcl\Domain\Dto\MatcherConfiguration;
+use Neos\Fusion\View\FusionView;
+use Neos\Neos\Controller\Module\AbstractModuleController;
+use Neos\Neos\FrontendRouting\SiteDetection\SiteDetectionResult;
 use Sandstorm\NeosAcl\Domain\Model\DynamicRole;
-use Sandstorm\NeosAcl\Service\DynamicRoleEditorService;
+use Sandstorm\NeosAcl\Domain\Model\InvalidDynamicRoleException;
+use Sandstorm\NeosAcl\Domain\Model\MatcherConfiguration;
+use Sandstorm\NeosAcl\Domain\Repository\DynamicRoleRepository;
+use Sandstorm\NeosAcl\Service\DynamicRoleApplier;
+use Sandstorm\NeosAcl\Service\DynamicRoleFormOptionsFactory;
+use Sandstorm\NeosAcl\Tree\DocumentTreeBuilder;
+use Sandstorm\NeosAcl\ViewModel\DynamicRoleFormData;
+use Sandstorm\NeosAcl\ViewModel\DynamicRoleListItem;
 
-class DynamicRoleController extends ActionController
+class DynamicRoleController extends AbstractModuleController
 {
+    protected $defaultViewObjectName = FusionView::class;
 
-    /**
-     * @Flow\Inject
-     * @var \Sandstorm\NeosAcl\Domain\Repository\DynamicRoleRepository
-     */
-    protected $dynamicRoleRepository;
+    #[Flow\Inject]
+    protected DynamicRoleRepository $dynamicRoleRepository;
 
-    /**
-     * @Flow\Inject
-     * @var DynamicRoleEditorService
-     */
-    protected $dynamicRoleEditorService;
+    #[Flow\Inject]
+    protected DynamicRoleApplier $dynamicRoleApplier;
 
-    /**
-     * @Flow\Inject
-     * @var PolicyService
-     */
-    protected $policyService;
+    #[Flow\Inject]
+    protected DynamicRoleFormOptionsFactory $formOptionsFactory;
 
-    /**
-     * @Flow\Inject
-     * @var ContentCache
-     */
-    protected $contentCache;
+    #[Flow\Inject]
+    protected DocumentTreeBuilder $documentTreeBuilder;
 
-    /**
-     * @return void
-     */
-    public function indexAction()
+    #[Flow\Inject]
+    protected PolicyService $policyService;
+
+    #[Flow\Inject]
+    protected PersistenceManagerInterface $persistenceManager;
+
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
+    #[Flow\InjectConfiguration(package: 'Neos.Neos', path: 'userInterface.navigateComponent.nodeTree.loadingDepth')]
+    protected int $nodeTreeLoadingDepth = 4;
+
+    public function indexAction(): void
     {
-        $this->view->assign('dynamicRoles', $this->dynamicRoleRepository->findAll());
+        $contentRepositoryId = $this->contentRepositoryId();
+        $listItems = [];
+        foreach ($this->dynamicRoleRepository->findAllOrderedByName() as $dynamicRole) {
+            $matcher = $dynamicRole->getMatcherConfiguration();
+            $listItems[] = new DynamicRoleListItem(
+                $this->identifierOf($dynamicRole),
+                $dynamicRole->getName(),
+                $dynamicRole->getRoleIdentifier(),
+                $dynamicRole->isAbstract(),
+                $dynamicRole->getParentRoleNames(),
+                $matcher->selectedWorkspaceNameStrings(),
+                $this->formOptionsFactory->dimensionSpacePointLabels($contentRepositoryId, $matcher->selectedDimensionSpacePoints),
+                $this->documentTreeBuilder->labels($contentRepositoryId, $matcher->selectedNodeAggregateIds),
+            );
+        }
+        $this->view->assign('dynamicRoles', $listItems);
+    }
+
+    public function newAction(): void
+    {
+        $this->view->assignMultiple([
+            'formData' => DynamicRoleFormData::forNewRole(),
+            'formOptions' => $this->formOptionsFactory->create($this->contentRepositoryId(), null, $this->nodeTreeLoadingDepth, $this->childrenEndpoint()),
+        ]);
     }
 
     /**
-     * @return void
+     * @param string $name
+     * @param bool $abstract
+     * @param array<string> $parentRoleNames
+     * @param array<string> $selectedWorkspaces
+     * @param array<string> $selectedDimensionSpacePoints
+     * @param array<string> $selectedNodes
      */
-    public function newAction()
+    public function createAction(string $name, bool $abstract = false, array $parentRoleNames = [], array $selectedWorkspaces = [], array $selectedDimensionSpacePoints = [], array $selectedNodes = []): void
     {
-        $this->view->assign('dynamicEditorProps', $this->dynamicRoleEditorService->generatePropsForReactWidget($this->request, null));
-        $templateDynamicRole = new DynamicRole();
-        $templateDynamicRole->setAbstract(false);
-        $templateDynamicRole->setParentRoleNames(['Neos.Neos:RestrictedEditor', 'Neos.Neos:LivePublisher']);
-        $templateDynamicRole->setPrivilege(DynamicRole::PRIVILEGE_VIEW_EDIT_CREATE_DELETE);
-        $this->view->assign('dynamicRole', $templateDynamicRole);
-
-        $this->assignAvailableRoles();
-
-    }
-
-    public function initializeCreateAction() {
-        $this->arguments->getArgument('newDynamicRole')->getPropertyMappingConfiguration()->forProperty('matcher')->setTypeConverterOption(ArrayConverter::class, ArrayConverter::CONFIGURATION_STRING_FORMAT, ArrayConverter::STRING_FORMAT_JSON);
-        $this->arguments->getArgument('newDynamicRole')->getPropertyMappingConfiguration()->forProperty('parentRoleNames')->setTypeConverterOption(ArrayConverter::class, ArrayConverter::CONFIGURATION_STRING_FORMAT, ArrayConverter::STRING_FORMAT_JSON);
-    }
-
-    /**
-     * @param \Sandstorm\NeosAcl\Domain\Model\DynamicRole $newDynamicRole
-     * @return void
-     */
-    public function createAction(DynamicRole $newDynamicRole)
-    {
-        $this->dynamicRoleRepository->add($newDynamicRole);
-        $this->flushContentCache();
-        $this->addFlashMessage('Created a new dynamic role.');
-        $this->redirect('index');
-    }
-
-    /**
-     * @param \Sandstorm\NeosAcl\Domain\Model\DynamicRole $dynamicRole
-     * @return void
-     */
-    public function editAction(DynamicRole $dynamicRole)
-    {
-        $this->view->assign('dynamicRole', $dynamicRole);
-        $this->view->assign('dynamicEditorProps', $this->dynamicRoleEditorService->generatePropsForReactWidget($this->request, MatcherConfiguration::fromJson($dynamicRole->getMatcher())));
-        $this->assignAvailableRoles($dynamicRole);
-    }
-
-    public function initializeUpdateAction() {
-        $this->arguments->getArgument('dynamicRole')->getPropertyMappingConfiguration()->forProperty('matcher')->setTypeConverterOption(ArrayConverter::class, ArrayConverter::CONFIGURATION_STRING_FORMAT, ArrayConverter::STRING_FORMAT_JSON);
-        $this->arguments->getArgument('dynamicRole')->getPropertyMappingConfiguration()->forProperty('parentRoleNames')->setTypeConverterOption(ArrayConverter::class, ArrayConverter::CONFIGURATION_STRING_FORMAT, ArrayConverter::STRING_FORMAT_JSON);
-    }
-
-    /**
-     * @param \Sandstorm\NeosAcl\Domain\Model\DynamicRole $dynamicRole
-     * @return void
-     */
-    public function updateAction(DynamicRole $dynamicRole)
-    {
-        $this->dynamicRoleRepository->update($dynamicRole);
-        $this->flushContentCache();
-        $this->addFlashMessage('Updated the dynamic role.');
-        $this->redirect('index');
-    }
-
-    /**
-     * @param \Sandstorm\NeosAcl\Domain\Model\DynamicRole $dynamicRole
-     * @return void
-     */
-    public function removeAction(DynamicRole $dynamicRole)
-    {
-        $this->dynamicRoleRepository->remove($dynamicRole);
-        $this->flushContentCache();
-        $this->addFlashMessage('Deleted a dynamic role.');
-        $this->redirect('index');
-    }
-
-    /**
-     * On all write actions, we need to flush the content cache. Otherwise, it might happen that the content cache for
-     * the user's workspace still contains ContentEditable markers, but access has been removed in the meantime. This
-     * would lead to an exception when the user starts to type; and we want to prevent this.
-     */
-    protected function flushContentCache()
-    {
-        $this->contentCache->flush();
-    }
-
-    protected function assignAvailableRoles(DynamicRole $roleToEdit = null)
-    {
-        $hiddenRoles = [
-            'Neos.Neos:Editor',
-            'Neos.Neos:Administrator',
-            'Neos.Neos:SetupUser',
-        ];
-
-        if ($roleToEdit) {
-            $hiddenRoles[] = 'Dynamic:' . $roleToEdit->getName();
+        try {
+            if ($this->dynamicRoleRepository->findOneByName($name) !== null) {
+                throw InvalidDynamicRoleException::forDuplicateName($name);
+            }
+            $dynamicRole = new DynamicRole(
+                $name,
+                $abstract,
+                $this->existingRoleIdentifiers($parentRoleNames),
+                $this->matcherFromSelection($selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
+            );
+        } catch (InvalidDynamicRoleException $exception) {
+            $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
+            $this->redirect('new');
         }
 
-        $this->view->assign('availableRoles', array_filter($this->policyService->getRoles(), function(Role $role) use ($hiddenRoles) {
-            if (in_array($role->getIdentifier(), $hiddenRoles, true)) {
-                return false;
+        $this->dynamicRoleRepository->add($dynamicRole);
+        $this->dynamicRoleApplier->apply($dynamicRole);
+        $this->addFlashMessage(sprintf('Created the dynamic role "%s". Editors see the change after their workspace was rebased.', $dynamicRole->getRoleIdentifier()));
+        $this->redirect('index');
+    }
+
+    public function editAction(DynamicRole $dynamicRole): void
+    {
+        $this->view->assignMultiple([
+            'formData' => DynamicRoleFormData::fromDynamicRole($this->identifierOf($dynamicRole), $dynamicRole),
+            'formOptions' => $this->formOptionsFactory->create($this->contentRepositoryId(), $dynamicRole, $this->nodeTreeLoadingDepth, $this->childrenEndpoint()),
+        ]);
+    }
+
+    /**
+     * @param DynamicRole $dynamicRole
+     * @param bool $abstract
+     * @param array<string> $parentRoleNames
+     * @param array<string> $selectedWorkspaces
+     * @param array<string> $selectedDimensionSpacePoints
+     * @param array<string> $selectedNodes
+     */
+    public function updateAction(DynamicRole $dynamicRole, bool $abstract = false, array $parentRoleNames = [], array $selectedWorkspaces = [], array $selectedDimensionSpacePoints = [], array $selectedNodes = []): void
+    {
+        try {
+            $dynamicRole->update(
+                $abstract,
+                $this->existingRoleIdentifiers($parentRoleNames),
+                $this->matcherFromSelection($selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
+            );
+        } catch (InvalidDynamicRoleException $exception) {
+            $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
+            $this->redirect('edit', null, null, ['dynamicRole' => $dynamicRole]);
+        }
+
+        $this->dynamicRoleRepository->update($dynamicRole);
+        $this->dynamicRoleApplier->apply($dynamicRole);
+        $this->addFlashMessage(sprintf('Updated the dynamic role "%s". Editors see the change after their workspace was rebased.', $dynamicRole->getRoleIdentifier()));
+        $this->redirect('index');
+    }
+
+    public function removeAction(DynamicRole $dynamicRole): void
+    {
+        $this->dynamicRoleApplier->revoke($dynamicRole);
+        $this->dynamicRoleRepository->remove($dynamicRole);
+        $this->addFlashMessage(sprintf('Deleted the dynamic role "%s".', $dynamicRole->getRoleIdentifier()));
+        $this->redirect('index');
+    }
+
+    /**
+     * @param array<mixed> $submittedRoleIdentifiers
+     *
+     * @return list<string>
+     */
+    private function existingRoleIdentifiers(array $submittedRoleIdentifiers): array
+    {
+        $roleIdentifiers = [];
+        foreach ($submittedRoleIdentifiers as $roleIdentifier) {
+            if (!is_string($roleIdentifier)) {
+                throw InvalidDynamicRoleException::forNonStringSelection('parent role');
             }
-            return true;
-        }));
+            if (!$this->policyService->hasRole($roleIdentifier)) {
+                throw InvalidDynamicRoleException::forUnknownParentRole($roleIdentifier);
+            }
+            $roleIdentifiers[] = $roleIdentifier;
+        }
+
+        return $roleIdentifiers;
+    }
+
+    /**
+     * @param array<string> $selectedWorkspaces
+     * @param array<string> $selectedDimensionSpacePoints
+     * @param array<string> $selectedNodes
+     */
+    private function matcherFromSelection(array $selectedWorkspaces, array $selectedDimensionSpacePoints, array $selectedNodes): MatcherConfiguration
+    {
+        $contentRepositoryId = $this->contentRepositoryId();
+
+        return MatcherConfiguration::fromSubmittedSelection(
+            $contentRepositoryId,
+            $selectedWorkspaces,
+            $selectedDimensionSpacePoints,
+            $this->contentRepositoryRegistry->get($contentRepositoryId)->getVariationGraph()->getDimensionSpacePoints(),
+            $selectedNodes,
+        );
+    }
+
+    private function contentRepositoryId(): ContentRepositoryId
+    {
+        return SiteDetectionResult::fromRequest($this->request->getHttpRequest())->contentRepositoryId;
+    }
+
+    private function childrenEndpoint(): string
+    {
+        $uriBuilder = new UriBuilder();
+        $uriBuilder->setRequest($this->request->getMainRequest());
+        $uriBuilder->setFormat('json');
+
+        return $uriBuilder->uriFor('children', [], 'NodeTree', 'Sandstorm.NeosAcl');
+    }
+
+    private function identifierOf(DynamicRole $dynamicRole): string
+    {
+        $identifier = $this->persistenceManager->getIdentifierByObject($dynamicRole);
+        if (!is_string($identifier)) {
+            throw new \RuntimeException('The dynamic role has no persistence identifier', 1757600011);
+        }
+
+        return $identifier;
     }
 }

@@ -1,0 +1,38 @@
+prototype(Sandstorm.NeosAcl:Component.DeleteDialog) < prototype(Neos.Fusion:Component) {
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleListItem
+  dynamicRole = null
+
+  @private {
+    popoverId = ${'neosacl-delete-' + props.dynamicRole.identifier}
+  }
+
+  renderer = afx`
+    <div popover id={private.popoverId} class="neosacl-dialog">
+      <header>
+        <button type="button" class="neos-close neos-button" popovertarget={private.popoverId} popovertargetaction="close">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="neos-header">
+          {I18n.id('roles.confirmDelete').source('Main').package('Sandstorm.NeosAcl').arguments([props.dynamicRole.roleIdentifier]).translate()}
+        </div>
+      </header>
+      <section>
+        <p><Sandstorm.NeosAcl:Translation id="roles.deleteConsequence" /></p>
+      </section>
+      <footer>
+        <button type="button" class="neos-button" popovertarget={private.popoverId} popovertargetaction="close">
+          <Sandstorm.NeosAcl:Translation id="cancel" />
+        </button>
+        <Neos.Fusion.Form:Form
+          form.target.action="remove"
+          form.target.arguments.dynamicRole={props.dynamicRole.identifier}
+          attributes.class="neos-inline"
+        >
+          <button type="submit" class="neos-button neos-button-danger">
+            <Sandstorm.NeosAcl:Translation id="roles.deleteConfirm" />
+          </button>
+        </Neos.Fusion.Form:Form>
+      </footer>
+    </div>
+  `
+}

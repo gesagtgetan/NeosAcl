@@ -1,0 +1,57 @@
+prototype(Sandstorm.NeosAcl:Component.NodeTree) < prototype(Neos.Fusion:Component) {
+  /// list<Sandstorm\NeosAcl\Tree\DocumentTreeNode>
+  nodes = ${[]}
+  /// string
+  childrenEndpoint = ''
+
+  renderer = afx`
+    <ul class="neosacl-tree" data-neosacl-tree data-children-endpoint={props.childrenEndpoint}>
+      <Neos.Fusion:Loop items={props.nodes} itemName="node">
+        <Sandstorm.NeosAcl:Component.NodeTreeItem node={node} />
+      </Neos.Fusion:Loop>
+      <li @if={Array.isEmpty(props.nodes)}><Sandstorm.NeosAcl:Translation id="form.nodes.empty" /></li>
+    </ul>
+  `
+}
+
+prototype(Sandstorm.NeosAcl:Component.NodeTreeItem) < prototype(Neos.Fusion:Component) {
+  /// Sandstorm\NeosAcl\Tree\DocumentTreeNode
+  node = null
+
+  @private {
+    loaded = ${props.node.children != null}
+    checkboxId = ${'neosacl-node-' + props.node.aggregateId}
+  }
+
+  renderer = afx`
+    <li
+      class={['neosacl-tree__item', private.loaded ? null : 'neosacl-tree__item--collapsed']}
+      data-aggregate-id={props.node.aggregateId}
+      data-loaded={private.loaded ? 'true' : 'false'}
+    >
+      <div class="neosacl-tree__row">
+        <button
+          @if={props.node.hasChildren}
+          type="button"
+          class="neosacl-tree__toggle"
+          data-neosacl-toggle
+          aria-expanded={private.loaded ? 'true' : 'false'}
+          aria-label={I18n.id('form.nodes.toggle').source('Main').package('Sandstorm.NeosAcl').translate()}
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <span @if={!props.node.hasChildren} class="neosacl-tree__toggle neosacl-tree__toggle--placeholder"></span>
+        <label class="neos-checkbox" for={private.checkboxId}>
+          <Neos.Fusion.Form:Checkbox field.name="selectedNodes" field.multiple={true} field.value={props.node.aggregateId} attributes.id={private.checkboxId} />
+          <span></span>
+          {props.node.label} <small class="neosacl-tree__type">{props.node.nodeTypeName}</small>
+        </label>
+      </div>
+      <ul class="neosacl-tree__children" @if={private.loaded}>
+        <Neos.Fusion:Loop items={props.node.children} itemName="child">
+          <Sandstorm.NeosAcl:Component.NodeTreeItem node={child} />
+        </Neos.Fusion:Loop>
+      </ul>
+    </li>
+  `
+}

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file original="" product-name="Sandstorm.NeosAcl" source-language="en" datatype="plaintext">
+    <body>
+      <trans-unit id="module.label" xml:space="preserve"><source>Dynamic Roles</source></trans-unit>
+      <trans-unit id="module.description" xml:space="preserve"><source>Grant restricted editors access to parts of the page tree</source></trans-unit>
+      <trans-unit id="cancel" xml:space="preserve"><source>Cancel</source></trans-unit>
+      <trans-unit id="roles.addNew" xml:space="preserve"><source>Add new dynamic role</source></trans-unit>
+      <trans-unit id="roles.role" xml:space="preserve"><source>Role</source></trans-unit>
+      <trans-unit id="roles.parentRoles" xml:space="preserve"><source>Parent roles</source></trans-unit>
+      <trans-unit id="roles.grants" xml:space="preserve"><source>Grants</source></trans-unit>
+      <trans-unit id="roles.abstract" xml:space="preserve"><source>abstract</source></trans-unit>
+      <trans-unit id="roles.none" xml:space="preserve"><source>No dynamic roles yet.</source></trans-unit>
+      <trans-unit id="roles.nodes" xml:space="preserve"><source>Editable subtrees</source></trans-unit>
+      <trans-unit id="roles.noNodes" xml:space="preserve"><source>No subtree selected, the role grants no editing.</source></trans-unit>
+      <trans-unit id="roles.dimensions" xml:space="preserve"><source>Dimensions</source></trans-unit>
+      <trans-unit id="roles.workspaces" xml:space="preserve"><source>Workspaces</source></trans-unit>
+      <trans-unit id="roles.edit" xml:space="preserve"><source>Edit</source></trans-unit>
+      <trans-unit id="roles.delete" xml:space="preserve"><source>Delete</source></trans-unit>
+      <trans-unit id="roles.confirmDelete" xml:space="preserve"><source>Do you really want to delete "{0}"?</source></trans-unit>
+      <trans-unit id="roles.deleteConsequence" xml:space="preserve"><source>Users with this role lose the granted editing rights and workspace access. This cannot be undone.</source></trans-unit>
+      <trans-unit id="roles.deleteConfirm" xml:space="preserve"><source>Yes, delete this dynamic role</source></trans-unit>
+      <trans-unit id="form.role" xml:space="preserve"><source>Role</source></trans-unit>
+      <trans-unit id="form.name" xml:space="preserve"><source>Name</source></trans-unit>
+      <trans-unit id="form.name.help" xml:space="preserve"><source>Letters, digits and underscores, at most 28 characters. The role identifier is "Dynamic:" followed by the name and cannot be changed later.</source></trans-unit>
+      <trans-unit id="form.abstract" xml:space="preserve"><source>Abstract</source></trans-unit>
+      <trans-unit id="form.abstract.help" xml:space="preserve"><source>Cannot be assigned to users directly, only inherited by other roles</source></trans-unit>
+      <trans-unit id="form.parentRoles" xml:space="preserve"><source>Parent roles</source></trans-unit>
+      <trans-unit id="form.parentRoles.help" xml:space="preserve"><source>Usually Neos.Neos:RestrictedEditor for backend access and Neos.Neos:LivePublisher for publishing to live.</source></trans-unit>
+      <trans-unit id="form.scope" xml:space="preserve"><source>Scope</source></trans-unit>
+      <trans-unit id="form.workspaces" xml:space="preserve"><source>Shared workspaces</source></trans-unit>
+      <trans-unit id="form.workspaces.help" xml:space="preserve"><source>The role becomes a collaborator of the selected workspaces. Personal workspaces are always available.</source></trans-unit>
+      <trans-unit id="form.dimensions" xml:space="preserve"><source>Dimensions</source></trans-unit>
+      <trans-unit id="form.dimensions.help" xml:space="preserve"><source>Editing is limited to the selected dimensions and their specializations. Nothing selected means all dimensions.</source></trans-unit>
+      <trans-unit id="form.nodes" xml:space="preserve"><source>Editable subtrees</source></trans-unit>
+      <trans-unit id="form.nodes.help" xml:space="preserve"><source>Members may edit the selected documents and everything below them. Changes reach editors after their workspace was rebased.</source></trans-unit>
+      <trans-unit id="form.nodes.empty" xml:space="preserve"><source>No sites found in the live workspace.</source></trans-unit>
+      <trans-unit id="form.nodes.toggle" xml:space="preserve"><source>Toggle children</source></trans-unit>
+      <trans-unit id="form.create" xml:space="preserve"><source>Create dynamic role</source></trans-unit>
+      <trans-unit id="form.save" xml:space="preserve"><source>Save dynamic role</source></trans-unit>
+    </body>
+  </file>
+</xliff>

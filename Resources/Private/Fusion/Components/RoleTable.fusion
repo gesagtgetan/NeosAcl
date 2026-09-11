@@ -1,0 +1,83 @@
+prototype(Sandstorm.NeosAcl:Component.RoleTable) < prototype(Neos.Fusion:Component) {
+  /// list<Sandstorm\NeosAcl\ViewModel\DynamicRoleListItem>
+  dynamicRoles = ${[]}
+
+  renderer = afx`
+    <table class="neos-table">
+      <thead>
+        <tr>
+          <th><Sandstorm.NeosAcl:Translation id="roles.role" /></th>
+          <th><Sandstorm.NeosAcl:Translation id="roles.parentRoles" /></th>
+          <th><Sandstorm.NeosAcl:Translation id="roles.grants" /></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <Neos.Fusion:Loop items={props.dynamicRoles} itemName="dynamicRole">
+          <Sandstorm.NeosAcl:Component.RoleTableRow dynamicRole={dynamicRole} />
+        </Neos.Fusion:Loop>
+        <tr @if={Array.isEmpty(props.dynamicRoles)}>
+          <td colspan="4"><Sandstorm.NeosAcl:Translation id="roles.none" /></td>
+        </tr>
+      </tbody>
+    </table>
+  `
+}
+
+prototype(Sandstorm.NeosAcl:Component.RoleTableRow) < prototype(Neos.Fusion:Component) {
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleListItem
+  dynamicRole = null
+
+  @private {
+    editUri = Neos.Fusion:UriBuilder {
+      action = 'edit'
+      arguments.dynamicRole = ${props.dynamicRole.identifier}
+    }
+  }
+
+  renderer = afx`
+    <tr>
+      <td>
+        <strong>{props.dynamicRole.roleIdentifier}</strong>
+        <span @if={props.dynamicRole.abstract} class="neos-label"><Sandstorm.NeosAcl:Translation id="roles.abstract" /></span>
+      </td>
+      <td>
+        <Neos.Fusion:Loop items={props.dynamicRole.parentRoleNames} itemName="parentRoleName">
+          <span class="neos-label">{parentRoleName}</span>{' '}
+        </Neos.Fusion:Loop>
+      </td>
+      <td>
+        <ul class="neosacl-grants">
+          <li @if={!Array.isEmpty(props.dynamicRole.nodeLabels)}>
+            <Sandstorm.NeosAcl:Translation id="roles.nodes" />: {Array.join(props.dynamicRole.nodeLabels, ', ')}
+          </li>
+          <li @if={Array.isEmpty(props.dynamicRole.nodeLabels)}>
+            <Sandstorm.NeosAcl:Translation id="roles.noNodes" />
+          </li>
+          <li @if={!Array.isEmpty(props.dynamicRole.dimensionSpacePointLabels)}>
+            <Sandstorm.NeosAcl:Translation id="roles.dimensions" />: {Array.join(props.dynamicRole.dimensionSpacePointLabels, '; ')}
+          </li>
+          <li @if={!Array.isEmpty(props.dynamicRole.workspaceNames)}>
+            <Sandstorm.NeosAcl:Translation id="roles.workspaces" />: {Array.join(props.dynamicRole.workspaceNames, ', ')}
+          </li>
+        </ul>
+      </td>
+      <td class="neos-action">
+        <div class="neos-pull-right">
+          <a href={private.editUri} class="neos-button neos-button-primary" title={I18n.id('roles.edit').source('Main').package('Sandstorm.NeosAcl').translate()}>
+            <i class="fas fa-pencil-alt icon-white"></i>
+          </a>
+          <button
+            type="button"
+            class="neos-button neos-button-danger"
+            popovertarget={'neosacl-delete-' + props.dynamicRole.identifier}
+            title={I18n.id('roles.delete').source('Main').package('Sandstorm.NeosAcl').translate()}
+          >
+            <i class="fas fa-trash-alt icon-white"></i>
+          </button>
+          <Sandstorm.NeosAcl:Component.DeleteDialog dynamicRole={props.dynamicRole} />
+        </div>
+      </td>
+    </tr>
+  `
+}

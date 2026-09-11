@@ -1,0 +1,21 @@
+Sandstorm.NeosAcl.Module.DynamicRoleController.index = Neos.Fusion:Component {
+  /// list<Sandstorm\NeosAcl\ViewModel\DynamicRoleListItem>
+  dynamicRoles = ${dynamicRoles}
+
+  newUri = Neos.Fusion:UriBuilder {
+    action = 'new'
+  }
+
+  renderer = afx`
+    <div class="neos-content neos-container-fluid">
+      <div class="neos-row-fluid">
+        <Sandstorm.NeosAcl:Component.RoleTable dynamicRoles={props.dynamicRoles} />
+      </div>
+    </div>
+    <div class="neos-footer">
+      <a href={props.newUri} class="neos-button neos-button-primary">
+        <Sandstorm.NeosAcl:Translation id="roles.addNew" />
+      </a>
+    </div>
+  `
+}

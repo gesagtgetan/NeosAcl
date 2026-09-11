@@ -3,28 +3,36 @@ Neos:
     modules:
       administration:
         submodules:
-          #acl:
-          #  label: 'ACL Inspector'
-          #  controller: 'Sandstorm\NeosAcl\Controller\Module\ACLInspectorController'
-          #  description: 'Module to check the acl'
-          #  icon: 'icon-lock'
-          #  actions:
-          #    index:
-          #      label: 'ACL Inspector'
-          #      title: 'ACL Inspector'
-          #  privilegeTarget: 'Sandstorm.NeosAcl:Backend.Module.ACLInspector'
           dynamicRoles:
-            label: 'Dynamic Roles'
+            label: 'Sandstorm.NeosAcl:Main:module.label'
             controller: 'Sandstorm\NeosAcl\Controller\Module\DynamicRoleController'
-            description: 'Module to check the acl'
-            icon: 'icon-lock'
-            actions:
-              index:
-                label: 'Dynamic Roles'
-                title: 'Dynamic Roles'
-            privilegeTarget: 'Sandstorm.NeosAcl:Backend.Module.DynamicRoles'
+            description: 'Sandstorm.NeosAcl:Main:module.description'
+            icon: fas fa-user-lock
+            mainStylesheet: 'Lite'
+            additionalResources:
+              javaScripts:
+                'Module': 'resource://Sandstorm.NeosAcl/Public/Scripts/Module.js'
+              styleSheets:
+                'Module': 'resource://Sandstorm.NeosAcl/Public/Styles/Module.css'
 
-Sandstorm:
-  NeosAcl:
-    reactDevelopmentMode: false
-    reactDevelopmentServerIpAndPort: 127.0.0.1:3000
+    userInterface:
+      translation:
+        autoInclude:
+          Sandstorm.NeosAcl:
+            - Main
+
+  Flow:
+    security:
+      authentication:
+        providers:
+          'Neos.Neos:Backend':
+            requestPatterns:
+              'Sandstorm.NeosAcl:Controllers':
+                pattern: ControllerObjectName
+                patternOptions:
+                  controllerObjectNamePattern: 'Sandstorm\NeosAcl\Controller\.*'
+
+    mvc:
+      routes:
+        'Sandstorm.NeosAcl':
+          position: 'before Neos.Neos'

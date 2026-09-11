@@ -1,56 +1,45 @@
-
 privilegeTargets:
+
   'Neos\Flow\Security\Authorization\Privilege\Method\MethodPrivilege':
-    'Sandstorm.NeosAcl:Backend.Module.ACLInspector':
-      matcher: 'method(Sandstorm\NeosAcl\Controller\Module\ACLInspectorController->(index|show)Action())'
-    'Sandstorm.NeosAcl:Backend.Module.DynamicRoles':
-      matcher: 'method(Sandstorm\NeosAcl\Controller\Module\DynamicRoleController->(index|show|create|new|update|remove|edit)Action())'
+    'Sandstorm.NeosAcl:Backend.DynamicRoles':
+      label: Manage dynamic roles in the backend module
+      matcher: 'method(Sandstorm\NeosAcl\Controller\Module\DynamicRoleController->(index|new|create|edit|update|remove)Action())'
+    'Sandstorm.NeosAcl:Backend.NodeTree':
+      label: Load document children for the node picker of the dynamic role form
+      matcher: 'method(Sandstorm\NeosAcl\Controller\NodeTreeController->childrenAction())'
 
-  # NOTE: if adding new "catch-all" PrivilegeTargets, they need to be added to
-  # DynamicPolicyRegistry::ALLOWED_PRIVILEGE_TARGET_TYPES
-  'Neos\ContentRepository\Security\Authorization\Privilege\Node\EditNodePrivilege':
-    # this privilegeTarget is defined to switch to a "whitelist" approach
+  'Neos\Neos\Security\Authorization\Privilege\ModulePrivilege':
+    'Sandstorm.NeosAcl:Backend.Module.Administration.DynamicRoles':
+      label: General access to the dynamic roles module
+      matcher: 'administration/dynamicRoles'
+
+  # Every site root carries the subtree tag "neosacl-restricted" (see ./flow neosacl:setup),
+  # so editing anywhere needs this grant or a dynamic role. Dynamic roles are added at
+  # runtime by Sandstorm\NeosAcl\Policy\DynamicPolicyGenerator.
+  'Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege':
     'Sandstorm.NeosAcl:EditAllNodes':
-      matcher: 'TRUE'
-
-  'Neos\ContentRepository\Security\Authorization\Privilege\Node\CreateNodePrivilege':
-    # this privilegeTarget is defined to switch to a "whitelist" approach
-    'Sandstorm.NeosAcl:CreateAllNodes':
-      matcher: 'TRUE'
-
-  'Neos\ContentRepository\Security\Authorization\Privilege\Node\RemoveNodePrivilege':
-    # this privilegeTarget is defined to switch to a "whitelist" approach
-    'Sandstorm.NeosAcl:RemoveAllNodes':
-      matcher: 'TRUE'
+      label: Edit all nodes regardless of dynamic roles
+      matcher: 'neosacl-restricted'
 
 roles:
+
   'Neos.Neos:Administrator':
     privileges:
       -
-        privilegeTarget: 'Sandstorm.NeosAcl:Backend.Module.ACLInspector'
+        privilegeTarget: 'Sandstorm.NeosAcl:Backend.DynamicRoles'
         permission: GRANT
       -
-        privilegeTarget: 'Sandstorm.NeosAcl:Backend.Module.DynamicRoles'
+        privilegeTarget: 'Sandstorm.NeosAcl:Backend.NodeTree'
         permission: GRANT
-      # Admins and unrestricted editors can still do everything.
+      -
+        privilegeTarget: 'Sandstorm.NeosAcl:Backend.Module.Administration.DynamicRoles'
+        permission: GRANT
       -
         privilegeTarget: 'Sandstorm.NeosAcl:EditAllNodes'
         permission: GRANT
-      -
-        privilegeTarget: 'Sandstorm.NeosAcl:CreateAllNodes'
-        permission: GRANT
-      -
-        privilegeTarget: 'Sandstorm.NeosAcl:RemoveAllNodes'
-        permission: GRANT
+
   'Neos.Neos:Editor':
-      # Admins and unrestricted editors can still do everything.
-      privileges:
-        -
-          privilegeTarget: 'Sandstorm.NeosAcl:EditAllNodes'
-          permission: GRANT
-        -
-          privilegeTarget: 'Sandstorm.NeosAcl:CreateAllNodes'
-          permission: GRANT
-        -
-          privilegeTarget: 'Sandstorm.NeosAcl:RemoveAllNodes'
-          permission: GRANT
+    privileges:
+      -
+        privilegeTarget: 'Sandstorm.NeosAcl:EditAllNodes'
+        permission: GRANT

@@ -1,0 +1,5 @@
+prototype(Sandstorm.NeosAcl:Translation) < prototype(Neos.Fusion:Value) {
+  /// string
+  id = null
+  value = ${I18n.translate(this.id, this.id, [], 'Main', 'Sandstorm.NeosAcl')}
+}

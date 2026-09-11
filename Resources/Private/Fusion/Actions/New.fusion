@@ -1,0 +1,10 @@
+Sandstorm.NeosAcl.Module.DynamicRoleController.new = Neos.Fusion:Component {
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleFormData
+  formData = ${formData}
+  /// Sandstorm\NeosAcl\ViewModel\DynamicRoleFormOptions
+  formOptions = ${formOptions}
+
+  renderer = afx`
+    <Sandstorm.NeosAcl:Component.RoleForm formData={props.formData} formOptions={props.formOptions} />
+  `
+}

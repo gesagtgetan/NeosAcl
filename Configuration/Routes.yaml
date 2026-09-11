@@ -1,0 +1,9 @@
+-
+  name: 'Document children for the dynamic role node picker'
+  uriPattern: 'neos/sandstorm-neosacl/node-tree/children'
+  defaults:
+    '@package': 'Sandstorm.NeosAcl'
+    '@controller': 'NodeTree'
+    '@action': 'children'
+    '@format': 'json'
+  httpMethods: ['GET']
