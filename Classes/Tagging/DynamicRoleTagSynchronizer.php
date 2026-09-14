@@ -6,12 +6,14 @@ namespace Sandstorm\NeosAcl\Tagging;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Sandstorm\NeosAcl\Domain\Model\DynamicRole;
 use Sandstorm\NeosAcl\Domain\Model\MatcherConfiguration;
+use Sandstorm\NeosAcl\Domain\Model\NeosAclSubtreeTag;
 
 /**
  * Makes the node aggregates tagged with a dynamic role's subtree tag match the role's
@@ -31,7 +33,7 @@ final readonly class DynamicRoleTagSynchronizer
     {
         $matcher = $dynamicRole->getMatcherConfiguration();
         $contentRepository = $this->contentRepositoryRegistry->get($matcher->contentRepositoryId);
-        $tag = $dynamicRole->getSubtreeTag();
+        $tag = self::roleTag($dynamicRole);
         $contentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
 
         foreach ($contentGraph->findNodeAggregatesTaggedBy($tag) as $taggedAggregate) {
@@ -57,10 +59,20 @@ final readonly class DynamicRoleTagSynchronizer
     public function removeAllTags(DynamicRole $dynamicRole): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($dynamicRole->getMatcherConfiguration()->contentRepositoryId);
-        $tag = $dynamicRole->getSubtreeTag();
+        $tag = self::roleTag($dynamicRole);
         foreach ($contentRepository->getContentGraph(WorkspaceName::forLive())->findNodeAggregatesTaggedBy($tag) as $taggedAggregate) {
             $this->subtreeTagWriter->removeExplicitTags($contentRepository, $taggedAggregate->nodeAggregateId, $tag);
         }
+    }
+
+    private static function roleTag(DynamicRole $dynamicRole): SubtreeTag
+    {
+        $tag = $dynamicRole->getSubtreeTag();
+        if ($tag->equals(NeosAclSubtreeTag::restricted())) {
+            throw new \RuntimeException(sprintf('Dynamic role "%s" must not use the restriction tag', $dynamicRole->getRoleIdentifier()), 1757600017);
+        }
+
+        return $tag;
     }
 
     private function desiredDimensionSpacePoints(ContentRepository $contentRepository, MatcherConfiguration $matcher, NodeAggregate $aggregate): DimensionSpacePointSet

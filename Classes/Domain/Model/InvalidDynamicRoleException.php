@@ -11,6 +11,11 @@ final class InvalidDynamicRoleException extends \InvalidArgumentException
         return new self(sprintf('"%s" is not a valid dynamic role name. Use 1 to 28 letters, digits or underscores.', $name), 1757600001);
     }
 
+    public static function forReservedName(string $name): self
+    {
+        return new self(sprintf('"%s" is reserved for the restriction tag of the site roots and cannot be used as a dynamic role name.', $name), 1757600016);
+    }
+
     public static function forNonStringSelection(string $selectionName): self
     {
         return new self(sprintf('The %s selection must only contain strings.', $selectionName), 1757600002);

@@ -46,6 +46,9 @@ class DynamicRole
         if (preg_match(self::NAME_PATTERN, $name) !== 1) {
             throw InvalidDynamicRoleException::forName($name);
         }
+        if (NeosAclSubtreeTag::forDynamicRoleName($name)->equals(NeosAclSubtreeTag::restricted())) {
+            throw InvalidDynamicRoleException::forReservedName($name);
+        }
         $this->name = $name;
         $this->subtreeTag = NeosAclSubtreeTag::forDynamicRoleName($name)->value;
         $this->abstract = $abstract;

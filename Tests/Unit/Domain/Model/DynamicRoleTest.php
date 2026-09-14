@@ -55,6 +55,24 @@ final class DynamicRoleTest extends TestCase
         new DynamicRole($name, false, [], self::emptyMatcher());
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function reservedNames(): iterable
+    {
+        yield 'lowercase' => ['restricted'];
+        yield 'capitalized' => ['Restricted'];
+        yield 'uppercase' => ['RESTRICTED'];
+    }
+
+    #[DataProvider('reservedNames')]
+    public function testRejectsNamesThatWouldReuseTheRestrictionTag(string $name): void
+    {
+        $this->expectException(InvalidDynamicRoleException::class);
+
+        new DynamicRole($name, false, [], self::emptyMatcher());
+    }
+
     public function testUpdateKeepsNameAndTag(): void
     {
         $dynamicRole = new DynamicRole('Marketing', false, [], self::emptyMatcher());
