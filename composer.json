@@ -21,6 +21,9 @@
     "extra": {
         "neos": {
             "package-key": "Sandstorm.NeosAcl"
+        },
+        "branch-alias": {
+            "dev-neos-9": "3.0.x-dev"
         }
     }
 }
