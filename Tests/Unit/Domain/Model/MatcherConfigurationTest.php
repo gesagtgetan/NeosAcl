@@ -8,7 +8,6 @@ use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
-use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use PHPUnit\Framework\TestCase;
 use Sandstorm\NeosAcl\Domain\Model\InvalidDynamicRoleException;
 use Sandstorm\NeosAcl\Domain\Model\MatcherConfiguration;
@@ -83,8 +82,7 @@ final class MatcherConfigurationTest extends TestCase
             ['node-a'],
         );
 
-        self::assertTrue($matcher->hasSelectedWorkspace(WorkspaceName::fromString('marketing')));
-        self::assertFalse($matcher->hasSelectedWorkspace(WorkspaceName::forLive()));
+        self::assertSame(['marketing'], $matcher->selectedWorkspaceNameStrings());
         self::assertTrue($matcher->selectedDimensionSpacePoints->contains($german));
         self::assertFalse($matcher->selectedDimensionSpacePoints->contains($english));
         self::assertTrue($matcher->selectedNodeAggregateIds->contain(NodeAggregateId::fromString('node-a')));

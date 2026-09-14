@@ -118,17 +118,6 @@ final readonly class MatcherConfiguration
         ];
     }
 
-    public function hasSelectedWorkspace(WorkspaceName $workspaceName): bool
-    {
-        foreach ($this->selectedWorkspaceNames as $selectedWorkspaceName) {
-            if ($selectedWorkspaceName->equals($workspaceName)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * @return list<string>
      */
