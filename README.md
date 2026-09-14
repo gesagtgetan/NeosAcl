@@ -41,9 +41,9 @@ composer require sandstorm/neosacl
 ./flow neosacl:setup
 ```
 
-`neosacl:setup` tags every site node in the live workspace with the subtree tag
-`neosacl-restricted`. Run it again after adding a site. Then log in as administrator and
-open Administration > Dynamic Roles.
+`neosacl:setup` tags the root of all sites in the live workspace with the subtree tag
+`neosacl-restricted`; sites added later inherit it. Then log in as administrator and open
+Administration > Dynamic Roles.
 
 Users get a dynamic role like any other role, e.g. `./flow user:addrole jane Dynamic:Marketing`.
 
@@ -55,7 +55,7 @@ matches a tag the node carries or inherits.
 
 - `Policy.yaml` of this package defines the target `Sandstorm.NeosAcl:EditAllNodes` for the
   tag `neosacl-restricted` and grants it to `Neos.Neos:Editor` and `Neos.Neos:Administrator`.
-  Because every site root carries that tag, every other role is denied.
+  Because the sites root carries that tag and every site inherits it, every other role is denied.
 - Each dynamic role `Dynamic:<name>` owns the tag `neosacl-<name>`. Saving the role in the
   module tags the selected node aggregates in the live workspace and the role is added to
   the policy at runtime (`PolicyService::configurationLoaded` signal) together with the

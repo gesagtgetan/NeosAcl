@@ -27,7 +27,7 @@ final readonly class DynamicRoleApplier
 
     public function apply(DynamicRole $dynamicRole): void
     {
-        $this->restrictedSiteRootTagger->tagSiteRoots($dynamicRole->getMatcherConfiguration()->contentRepositoryId);
+        $this->restrictedSiteRootTagger->tagSitesRoot($dynamicRole->getMatcherConfiguration()->contentRepositoryId);
         $this->tagSynchronizer->synchronize($dynamicRole);
         $this->workspaceAccess->synchronize($dynamicRole);
         $this->flushContentCache();

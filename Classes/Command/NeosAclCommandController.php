@@ -44,8 +44,8 @@ class NeosAclCommandController extends CommandController
     {
         $this->securityContext->withoutAuthorizationChecks(function (): void {
             foreach ($this->contentRepositoryRegistry->getContentRepositoryIds() as $contentRepositoryId) {
-                $siteCount = $this->restrictedSiteRootTagger->tagSiteRoots($contentRepositoryId);
-                $this->outputLine('Content repository "%s": %d site root(s) carry the restriction tag.', [$contentRepositoryId->value, $siteCount]);
+                $tagged = $this->restrictedSiteRootTagger->tagSitesRoot($contentRepositoryId);
+                $this->outputLine('Content repository "%s": %s', [$contentRepositoryId->value, $tagged ? 'the sites root carries the restriction tag.' : 'no sites root found.']);
             }
             foreach ($this->dynamicRoleRepository->findAllOrderedByName() as $dynamicRole) {
                 $this->dynamicRoleApplier->apply($dynamicRole);

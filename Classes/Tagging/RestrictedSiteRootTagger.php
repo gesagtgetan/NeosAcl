@@ -12,8 +12,9 @@ use Neos\Neos\Domain\Service\NodeTypeNameFactory;
 use Sandstorm\NeosAcl\Domain\Model\NeosAclSubtreeTag;
 
 /**
- * Puts the restriction tag on every site node so that editing anywhere requires a
- * grant of `Sandstorm.NeosAcl:EditAllNodes` or of a dynamic role.
+ * Puts the restriction tag on the root aggregate of all sites so that editing anywhere
+ * requires a grant of `Sandstorm.NeosAcl:EditAllNodes` or of a dynamic role; sites added
+ * later inherit the tag without another setup run.
  */
 #[Flow\Scope('singleton')]
 final readonly class RestrictedSiteRootTagger
@@ -24,29 +25,20 @@ final readonly class RestrictedSiteRootTagger
     ) {
     }
 
-    /**
-     * @return int number of site node aggregates that carry the tag afterwards
-     */
-    public function tagSiteRoots(ContentRepositoryId $contentRepositoryId): int
+    public function tagSitesRoot(ContentRepositoryId $contentRepositoryId): bool
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $contentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
         $sitesRoot = $contentGraph->findRootNodeAggregateByType(NodeTypeNameFactory::forSites());
         if ($sitesRoot === null) {
-            return 0;
+            return false;
         }
 
-        $count = 0;
+        $this->subtreeTagWriter->setExplicitTags($contentRepository, $sitesRoot->nodeAggregateId, NeosAclSubtreeTag::restricted(), $sitesRoot->coveredDimensionSpacePoints);
         foreach ($contentGraph->findChildNodeAggregates($sitesRoot->nodeAggregateId) as $siteAggregate) {
-            $this->subtreeTagWriter->setExplicitTags(
-                $contentRepository,
-                $siteAggregate->nodeAggregateId,
-                NeosAclSubtreeTag::restricted(),
-                $siteAggregate->coveredDimensionSpacePoints,
-            );
-            ++$count;
+            $this->subtreeTagWriter->removeExplicitTags($contentRepository, $siteAggregate->nodeAggregateId, NeosAclSubtreeTag::restricted());
         }
 
-        return $count;
+        return true;
     }
 }
