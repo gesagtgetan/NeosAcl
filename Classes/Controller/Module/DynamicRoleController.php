@@ -114,6 +114,9 @@ class DynamicRoleController extends AbstractModuleController
             $dynamicRole = new DynamicRole(
                 $name,
                 $abstract,
+            if ($this->dynamicRoleRepository->findOneBySubtreeTag($dynamicRole->getSubtreeTag()->value) !== null) {
+                throw InvalidDynamicRoleException::forDuplicateName($name);
+            }
                 $this->existingRoleIdentifiers($parentRoleNames),
                 $this->matcherFromSelection($selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
             );
