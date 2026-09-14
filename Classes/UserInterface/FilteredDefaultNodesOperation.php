@@ -29,12 +29,19 @@ class FilteredDefaultNodesOperation extends NeosUiDefaultNodesOperation
      */
     public function evaluate(FlowQuery $flowQuery, array $arguments)
     {
+        /** @var array<int, Node> $context */
+        $context = $flowQuery->getContext();
+        $document = $context[1] ?? $context[0];
         parent::evaluate($flowQuery, array_values($arguments));
         if (!$this->hideUneditableDocuments) {
             return;
         }
+        $alwaysVisible = $this->editableDocumentFilter->alwaysVisibleIds($document);
         /** @var array<string, Node> $nodes */
         $nodes = $flowQuery->getContext();
-        $flowQuery->setContext(array_filter($nodes, $this->editableDocumentFilter->isVisible(...)));
+        $flowQuery->setContext(array_filter(
+            $nodes,
+            fn (Node $node): bool => isset($alwaysVisible[$node->aggregateId->value]) || $this->editableDocumentFilter->isVisible($node),
+        ));
     }
 }

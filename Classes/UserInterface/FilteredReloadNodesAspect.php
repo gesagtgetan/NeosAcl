@@ -43,12 +43,17 @@ class FilteredReloadNodesAspect
         $subgraph = $this->contentRepositoryRegistry->get($query->contentRepositoryId)
             ->getContentSubgraph($query->workspaceName, $query->dimensionSpacePoint);
 
+        $alwaysVisible = [$query->documentId->value => true];
+        foreach ($query->ancestorsOfDocumentIds as $ancestorId) {
+            $alwaysVisible[$ancestorId->value] = true;
+        }
         $visibleItems = [];
         $items = $result->nodes->jsonSerialize();
         foreach (is_array($items) ? $items : [] as $item) {
             \assert($item instanceof MinimalNodeForTree);
-            $node = $subgraph->findNodeById(NodeAddress::fromJsonString($item->getNodeAddressAsString())->aggregateId);
-            if ($node === null || $this->editableDocumentFilter->isVisible($node)) {
+            $aggregateId = NodeAddress::fromJsonString($item->getNodeAddressAsString())->aggregateId;
+            $node = $subgraph->findNodeById($aggregateId);
+            if ($node === null || isset($alwaysVisible[$aggregateId->value]) || $this->editableDocumentFilter->isVisible($node)) {
                 $visibleItems[] = $item;
             }
         }

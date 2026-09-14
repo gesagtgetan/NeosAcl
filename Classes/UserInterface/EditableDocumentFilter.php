@@ -38,6 +38,19 @@ final class EditableDocumentFilter
     ) {
     }
 
+    /**
+     * @return array<string, true> ids of the document and its ancestors, which the tree must always contain
+     */
+    public function alwaysVisibleIds(Node $document): array
+    {
+        $ids = [$document->aggregateId->value => true];
+        foreach ($this->contentRepositoryRegistry->subgraphForNode($document)->findAncestorNodes($document->aggregateId, FindAncestorNodesFilter::create()) as $ancestor) {
+            $ids[$ancestor->aggregateId->value] = true;
+        }
+
+        return $ids;
+    }
+
     public function isVisible(Node $node): bool
     {
         if (!$this->currentUserHasDynamicRole()) {
