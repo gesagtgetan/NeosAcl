@@ -31,10 +31,6 @@ Main features:
   edit, plus the path leading there (setting `Sandstorm.NeosAcl.userInterface.hideUneditableDocuments`).
   Users without a dynamic role see the whole tree.
 
-![listing](./Documentation/listing.png)
-
-![edit](./Documentation/edit.png)
-
 ## Installation
 
 ```
