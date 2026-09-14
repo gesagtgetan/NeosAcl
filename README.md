@@ -1,7 +1,8 @@
 # Sandstorm.NeosAcl
 
 > **Warning**
-> This is the Neos 9 port. Everything it writes into the content repository are regular
+> This is an inofficial Neos 9 port by gesagt.getan., not (yet) endorsed by Sandstorm.
+> Everything it writes into the content repository are regular
 > `TagSubtree` / `UntagSubtree` commands through the public command API, the same mechanism
 > Neos uses for disabling nodes, so the risk for your content is low. The document tree
 > filter however hooks into Neos UI internals (`neosUiDefaultNodes`, `neosUiFilteredChildren`,
@@ -13,8 +14,9 @@ Dynamic access control lists for Neos CMS 9: restrict editors to parts of the pa
 through roles that administrators manage in a backend module.
 
 The development of the original package was sponsored by [ujamii](https://www.ujamii.com/)
-and [queo](https://www.queo.de). Version 3 is a rewrite for the Neos 9 content repository;
-the Neos 7 and 8 versions live on the 2.x branch.
+and [queo](https://www.queo.de). This branch is an inofficial rewrite for the Neos 9 content
+repository, maintained by gesagt.getan. until it is merged upstream; the Neos 7 and 8
+versions live on `master`.
 
 Main features:
 
