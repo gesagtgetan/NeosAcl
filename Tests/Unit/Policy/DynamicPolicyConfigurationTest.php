@@ -79,6 +79,33 @@ final class DynamicPolicyConfigurationTest extends TestCase
         ], $merged);
     }
 
+    public function testMergeIntoDropsParentRolesThatDoNotExist(): void
+    {
+        $policy = ['roles' => ['Neos.Neos:RestrictedEditor' => ['privileges' => []]]];
+
+        $merged = DynamicPolicyConfiguration::mergeInto($policy, [
+            new DynamicRolePolicyEntry('Child', 'neosacl-child', false, ['Dynamic:Deleted', 'Neos.Neos:RestrictedEditor', 'Dynamic:Base']),
+            new DynamicRolePolicyEntry('Base', 'neosacl-base', true, []),
+        ]);
+
+        self::assertSame(
+            [
+                'Neos.Neos:RestrictedEditor' => ['privileges' => []],
+                'Dynamic:Child' => [
+                    'abstract' => false,
+                    'parentRoles' => ['Neos.Neos:RestrictedEditor', 'Dynamic:Base'],
+                    'privileges' => [['privilegeTarget' => 'Dynamic:Child.EditNodes', 'permission' => 'GRANT']],
+                ],
+                'Dynamic:Base' => [
+                    'abstract' => true,
+                    'parentRoles' => [],
+                    'privileges' => [['privilegeTarget' => 'Dynamic:Base.EditNodes', 'permission' => 'GRANT']],
+                ],
+            ],
+            $merged['roles'],
+        );
+    }
+
     public function testBuildsEmptyStructuresWithoutEntries(): void
     {
         self::assertSame(

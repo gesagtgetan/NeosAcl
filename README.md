@@ -86,8 +86,11 @@ of every dynamic role. `./flow neosacl:remove <name>` deletes a role from the co
 - The per-node node type filter is gone.
 - Dimension presets became dimension space points. Preset selections of existing roles are
   dropped by the migration; workspace and node selections are kept.
-- Role names are limited to 28 characters of letters, digits and underscores and cannot be
-  changed after creation, because the subtree tag derives from the name.
+- Role names are limited to 28 characters of letters, digits and underscores, are unique
+  regardless of case and cannot be changed after creation, because the subtree tag derives
+  from the name. The migration stops when a legacy name is longer and warns about roles that
+  had the view-only level or a node type filter.
+- A role that other dynamic roles list as parent cannot be deleted before them.
 - The ACL inspector module, the cache frontends patching Flow's AOP caches and the React
   based editor were removed.
 

@@ -25,6 +25,14 @@ final readonly class DynamicRolePolicyEntry
     }
 
     /**
+     * @param list<string> $parentRoleNames
+     */
+    public function withParentRoleNames(array $parentRoleNames): self
+    {
+        return new self($this->name, $this->subtreeTag, $this->abstract, $parentRoleNames);
+    }
+
+    /**
      * @param array<string, mixed> $row columns name, subtreetag, abstract, parentrolenames
      */
     public static function fromRow(array $row): self

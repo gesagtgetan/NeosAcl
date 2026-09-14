@@ -11,11 +11,23 @@ use Sandstorm\NeosAcl\Domain\Model\DynamicRole;
 
 /**
  * @method DynamicRole|null findOneByName(string $name)
+ * @method DynamicRole|null findOneBySubtreeTag(string $subtreeTag)
  */
 #[Flow\Scope('singleton')]
 class DynamicRoleRepository extends Repository
 {
     public const ENTITY_CLASSNAME = DynamicRole::class;
+
+    /**
+     * @return list<DynamicRole>
+     */
+    public function findChildRoles(DynamicRole $parent): array
+    {
+        return array_values(array_filter(
+            $this->findAllOrderedByName(),
+            static fn (DynamicRole $candidate): bool => in_array($parent->getRoleIdentifier(), $candidate->getParentRoleNames(), true),
+        ));
+    }
 
     /**
      * @return list<DynamicRole>

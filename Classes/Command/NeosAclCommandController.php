@@ -11,6 +11,8 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Flow\Security\Context as SecurityContext;
+use Sandstorm\NeosAcl\Domain\Model\DynamicRole;
+use Sandstorm\NeosAcl\Domain\Model\InvalidDynamicRoleException;
 use Sandstorm\NeosAcl\Domain\Model\NeosAclSubtreeTag;
 use Sandstorm\NeosAcl\Domain\Repository\DynamicRoleRepository;
 use Sandstorm\NeosAcl\Service\DynamicRoleApplier;
@@ -64,6 +66,11 @@ class NeosAclCommandController extends CommandController
         $dynamicRole = $this->dynamicRoleRepository->findOneByName($name);
         if ($dynamicRole === null) {
             $this->outputLine('<error>There is no dynamic role named "%s".</error>', [$name]);
+            $this->quit(1);
+        }
+        $childRoles = $this->dynamicRoleRepository->findChildRoles($dynamicRole);
+        if ($childRoles !== []) {
+            $this->outputLine('<error>%s</error>', [InvalidDynamicRoleException::forRoleWithChildren($dynamicRole->getRoleIdentifier(), array_map(static fn (DynamicRole $child): string => $child->getRoleIdentifier(), $childRoles))->getMessage()]);
             $this->quit(1);
         }
         $this->securityContext->withoutAuthorizationChecks(fn () => $this->dynamicRoleApplier->revoke($dynamicRole));

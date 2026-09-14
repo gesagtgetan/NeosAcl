@@ -33,8 +33,17 @@ final class DynamicPolicyConfiguration
         if ($entries === []) {
             return $policyConfiguration;
         }
+        $staticRoles = $policyConfiguration['roles'] ?? [];
+        $knownRoleIdentifiers = array_merge(
+            is_array($staticRoles) ? array_map(strval(...), array_keys($staticRoles)) : [],
+            array_map(static fn (DynamicRolePolicyEntry $entry): string => DynamicRole::ROLE_IDENTIFIER_PREFIX . $entry->name, $entries),
+        );
+        $entriesWithKnownParents = array_map(
+            static fn (DynamicRolePolicyEntry $entry): DynamicRolePolicyEntry => $entry->withParentRoleNames(array_values(array_intersect($entry->parentRoleNames, $knownRoleIdentifiers))),
+            $entries,
+        );
 
-        return Arrays::arrayMergeRecursiveOverrule($policyConfiguration, self::fromEntries($entries), false, false);
+        return Arrays::arrayMergeRecursiveOverrule($policyConfiguration, self::fromEntries($entriesWithKnownParents), false, false);
     }
 
     /**

@@ -33,6 +33,14 @@ final class InvalidDynamicRoleException extends \InvalidArgumentException
 
     public static function forDuplicateName(string $name): self
     {
-        return new self(sprintf('A dynamic role named "%s" exists already.', $name), 1757600004);
+        return new self(sprintf('A dynamic role named "%s" exists already (names are compared case insensitively).', $name), 1757600004);
+    }
+
+    /**
+     * @param list<string> $childRoleIdentifiers
+     */
+    public static function forRoleWithChildren(string $roleIdentifier, array $childRoleIdentifiers): self
+    {
+        return new self(sprintf('"%s" is a parent of %s and cannot be deleted first.', $roleIdentifier, implode(', ', $childRoleIdentifiers)), 1757600018);
     }
 }

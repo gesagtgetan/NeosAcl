@@ -167,6 +167,15 @@ class DynamicRoleController extends AbstractModuleController
     {
         $this->dynamicRoleApplier->revoke($dynamicRole);
         $this->dynamicRoleRepository->remove($dynamicRole);
+        $childRoles = $this->dynamicRoleRepository->findChildRoles($dynamicRole);
+        if ($childRoles !== []) {
+            $this->addFlashMessage(
+                InvalidDynamicRoleException::forRoleWithChildren($dynamicRole->getRoleIdentifier(), array_map(static fn (DynamicRole $child): string => $child->getRoleIdentifier(), $childRoles))->getMessage(),
+                '',
+                Message::SEVERITY_ERROR,
+            );
+            $this->redirect('index');
+        }
         $this->addFlashMessage(sprintf('Deleted the dynamic role "%s".', $dynamicRole->getRoleIdentifier()));
         $this->redirect('index');
     }
