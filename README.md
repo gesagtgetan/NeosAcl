@@ -72,7 +72,10 @@ matches a tag the node carries or inherits.
   read only.
 
 Subtree tags are content of the live workspace. An editor's personal workspace sees a
-changed grant after its next rebase, which the Neos UI offers when live has changed.
+changed grant after its next rebase, which the Neos UI offers when live has changed. Until
+then the editor keeps the old grants in that workspace, and Neos publishes the workspace
+without re-checking node permissions, so revoking a grant should be followed by a look at
+the affected editors' pending changes.
 
 `./flow neosacl:list` shows which node aggregates carry the restriction tag and the tags
 of every dynamic role. `./flow neosacl:remove <name>` deletes a role from the command line.
