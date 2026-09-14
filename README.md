@@ -1,5 +1,14 @@
 # Sandstorm.NeosAcl
 
+> **Warning**
+> This is the Neos 9 port. Everything it writes into the content repository are regular
+> `TagSubtree` / `UntagSubtree` commands through the public command API, the same mechanism
+> Neos uses for disabling nodes, so the risk for your content is low. The document tree
+> filter however hooks into Neos UI internals (`neosUiDefaultNodes`, `neosUiFilteredChildren`,
+> `ReloadNodesQueryHandler`) and uses two `@internal` content repository methods. Future Neos
+> updates can break these parts; test the module after every Neos update. A break in the tree
+> filter shows the full tree again, it does not grant any permission.
+
 Dynamic access control lists for Neos CMS 9: restrict editors to parts of the page tree
 through roles that administrators manage in a backend module.
 
