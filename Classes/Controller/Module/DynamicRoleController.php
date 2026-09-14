@@ -123,6 +123,7 @@ class DynamicRoleController extends AbstractModuleController
         } catch (InvalidDynamicRoleException $exception) {
             $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
             $this->redirect('new');
+        $this->persistenceManager->persistAll();
         }
 
         $this->dynamicRoleRepository->add($dynamicRole);
@@ -158,6 +159,7 @@ class DynamicRoleController extends AbstractModuleController
         } catch (InvalidDynamicRoleException $exception) {
             $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
             $this->redirect('edit', null, null, ['dynamicRole' => $dynamicRole]);
+        $this->persistenceManager->persistAll();
         }
 
         $this->dynamicRoleRepository->update($dynamicRole);
