@@ -49,7 +49,7 @@ prototype(Sandstorm.NeosAcl:Component.RoleTableRow) < prototype(Neos.Fusion:Comp
       <td>
         <ul class="neosacl-grants">
           <li @if={!Array.isEmpty(props.dynamicRole.nodeLabels)}>
-            <Sandstorm.NeosAcl:Translation id="roles.nodes" />: {Array.join(props.dynamicRole.nodeLabels, ', ')}
+            <Sandstorm.NeosAcl:Translation id="roles.nodes" />: {String.htmlSpecialChars(Array.join(props.dynamicRole.nodeLabels, ', '))}
           </li>
           <li @if={Array.isEmpty(props.dynamicRole.nodeLabels)}>
             <Sandstorm.NeosAcl:Translation id="roles.noNodes" />

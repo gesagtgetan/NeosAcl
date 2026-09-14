@@ -65,7 +65,7 @@ prototype(Sandstorm.NeosAcl:Component.RoleForm) < prototype(Neos.Fusion:Componen
 
             <Neos.Fusion.Form:Neos.BackendModule.FieldContainer @if={!Array.isEmpty(props.formOptions.workspaces)} field.name="selectedWorkspaces" field.multiple={true} label="form.workspaces">
               <Neos.Fusion:Loop items={props.formOptions.workspaces} itemName="workspaceOption">
-                <Neos.Fusion.Form:Checkbox field.value={workspaceOption.name}>{workspaceOption.title} <small>({workspaceOption.name})</small></Neos.Fusion.Form:Checkbox>
+                <Neos.Fusion.Form:Checkbox field.value={workspaceOption.name}>{String.htmlSpecialChars(workspaceOption.title)} <small>({workspaceOption.name})</small></Neos.Fusion.Form:Checkbox>
               </Neos.Fusion:Loop>
               <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.workspaces.help" /></p>
             </Neos.Fusion.Form:Neos.BackendModule.FieldContainer>

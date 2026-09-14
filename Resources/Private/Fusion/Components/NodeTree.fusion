@@ -44,7 +44,7 @@ prototype(Sandstorm.NeosAcl:Component.NodeTreeItem) < prototype(Neos.Fusion:Comp
         <label class="neos-checkbox" for={private.checkboxId}>
           <Neos.Fusion.Form:Checkbox field.name="selectedNodes" field.multiple={true} field.value={props.node.aggregateId} attributes.id={private.checkboxId} />
           <span></span>
-          {props.node.label} <small class="neosacl-tree__type">{props.node.nodeTypeName}</small>
+          {String.htmlSpecialChars(props.node.label)} <small class="neosacl-tree__type">{props.node.nodeTypeName}</small>
         </label>
       </div>
       <ul class="neosacl-tree__children" @if={private.loaded}>

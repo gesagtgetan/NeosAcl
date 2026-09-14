@@ -74,12 +74,19 @@ class DynamicRoleController extends AbstractModuleController
 
     public function initializeCreateAction(): void
     {
+        $this->requirePost();
         $this->allowAllListArgumentValues();
     }
 
     public function initializeUpdateAction(): void
     {
+        $this->requirePost();
         $this->allowAllListArgumentValues();
+    }
+
+    public function initializeRemoveAction(): void
+    {
+        $this->requirePost();
     }
 
     public function newAction(): void
@@ -168,6 +175,13 @@ class DynamicRoleController extends AbstractModuleController
      * The trusted properties of the form only cover the checkboxes that were rendered on the
      * server; documents expanded in the browser add more values to the same list.
      */
+    private function requirePost(): void
+    {
+        if ($this->request->getHttpRequest()->getMethod() !== 'POST') {
+            $this->throwStatus(405, 'Dynamic roles are changed with POST requests only');
+        }
+    }
+
     private function allowAllListArgumentValues(): void
     {
         foreach (['parentRoleNames', 'selectedWorkspaces', 'selectedDimensionSpacePoints', 'selectedNodes'] as $argumentName) {
