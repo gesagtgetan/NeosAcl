@@ -18,6 +18,7 @@ use Neos\Neos\Domain\Model\WorkspaceClassification;
 use Neos\Neos\Domain\Service\WorkspaceService;
 use Sandstorm\NeosAcl\Domain\Model\DynamicRole;
 use Sandstorm\NeosAcl\Tree\DocumentTreeBuilder;
+use Sandstorm\NeosAcl\Tree\DocumentTreeNode;
 use Sandstorm\NeosAcl\ViewModel\DimensionSpacePointOption;
 use Sandstorm\NeosAcl\ViewModel\DynamicRoleFormOptions;
 use Sandstorm\NeosAcl\ViewModel\RoleOption;
@@ -51,11 +52,15 @@ final readonly class DynamicRoleFormOptionsFactory
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $selectedNodeAggregateIds = $editedRole?->getMatcherConfiguration()->selectedNodeAggregateIds ?? NodeAggregateIds::createEmpty();
 
+        $documentTree = $this->documentTreeBuilder->build($contentRepositoryId, $selectedNodeAggregateIds, $treeLoadingDepth);
+        $renderedIds = self::aggregateIdsOf($documentTree);
+
         return new DynamicRoleFormOptions(
             $this->parentRoleOptions($editedRole),
             $this->workspaceOptions($contentRepository),
             $this->dimensionSpacePointOptions($contentRepository),
-            $this->documentTreeBuilder->build($contentRepositoryId, $selectedNodeAggregateIds, $treeLoadingDepth),
+            $documentTree,
+            array_values(array_filter($selectedNodeAggregateIds->toStringArray(), static fn (string $id): bool => !isset($renderedIds[$id]))),
             $childrenEndpoint,
         );
     }
@@ -72,6 +77,22 @@ final readonly class DynamicRoleFormOptionsFactory
         }
 
         return $labels;
+    }
+
+    /**
+     * @param list<DocumentTreeNode> $nodes
+     *
+     * @return array<string, true>
+     */
+    private static function aggregateIdsOf(array $nodes): array
+    {
+        $ids = [];
+        foreach ($nodes as $node) {
+            $ids[$node->aggregateId] = true;
+            $ids += self::aggregateIdsOf($node->children ?? []);
+        }
+
+        return $ids;
     }
 
     /**

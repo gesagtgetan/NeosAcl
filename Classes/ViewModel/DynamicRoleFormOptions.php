@@ -15,12 +15,14 @@ final readonly class DynamicRoleFormOptions
      * @param list<WorkspaceOption> $workspaces
      * @param list<DimensionSpacePointOption> $dimensionSpacePoints empty when the content repository has no dimensions
      * @param list<DocumentTreeNode> $documentTree
+     * @param list<string> $selectedNodeAggregateIdsOutsideTree selected nodes the tree cannot show, kept through hidden fields
      */
     public function __construct(
         public array $parentRoles,
         public array $workspaces,
         public array $dimensionSpacePoints,
         public array $documentTree,
+        public array $selectedNodeAggregateIdsOutsideTree,
         public string $childrenEndpoint,
     ) {
     }

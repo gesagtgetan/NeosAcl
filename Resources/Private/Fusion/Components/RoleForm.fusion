@@ -84,6 +84,12 @@ prototype(Sandstorm.NeosAcl:Component.RoleForm) < prototype(Neos.Fusion:Componen
             <legend><Sandstorm.NeosAcl:Translation id="form.nodes" /></legend>
             <p class="neos-help-inline"><Sandstorm.NeosAcl:Translation id="form.nodes.help" /></p>
             <Sandstorm.NeosAcl:Component.NodeTree nodes={props.formOptions.documentTree} childrenEndpoint={props.formOptions.childrenEndpoint} />
+            <Neos.Fusion:Loop items={props.formOptions.selectedNodeAggregateIdsOutsideTree} itemName="aggregateId">
+              <Neos.Fusion.Form:Hidden field.name="selectedNodes" field.multiple={true} field.value={aggregateId} />
+            </Neos.Fusion:Loop>
+            <p @if={!Array.isEmpty(props.formOptions.selectedNodeAggregateIdsOutsideTree)} class="neos-help-inline">
+              <Sandstorm.NeosAcl:Translation id="form.nodes.outsideTree" />: {Array.join(props.formOptions.selectedNodeAggregateIdsOutsideTree, ', ')}
+            </p>
           </fieldset>
         </div>
       </div>

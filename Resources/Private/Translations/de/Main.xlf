@@ -38,6 +38,7 @@
       <trans-unit id="form.nodes.toggle" xml:space="preserve"><source>Toggle children</source><target>Unterseiten ein- oder ausblenden</target></trans-unit>
       <trans-unit id="form.create" xml:space="preserve"><source>Create dynamic role</source><target>Dynamische Rolle anlegen</target></trans-unit>
       <trans-unit id="form.save" xml:space="preserve"><source>Save dynamic role</source><target>Dynamische Rolle speichern</target></trans-unit>
+      <trans-unit id="form.nodes.outsideTree" xml:space="preserve"><source>Selected documents the tree cannot show here are kept</source><target>Ausgewählte Dokumente, die der Baum hier nicht anzeigt, bleiben erhalten</target></trans-unit>
     </body>
   </file>
 </xliff>
