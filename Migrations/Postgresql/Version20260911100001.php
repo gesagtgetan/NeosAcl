@@ -22,6 +22,17 @@ final class Version20260911100001 extends AbstractMigration
             "Migration can only be executed safely on '\Doctrine\DBAL\Platforms\PostgreSQLPlatform'."
         );
 
+        $tooLongNames = $this->connection->fetchFirstColumn('SELECT name FROM sandstorm_neosacl_domain_model_dynamicrole WHERE LENGTH(name) > 28');
+        $this->abortIf(
+            $tooLongNames !== [],
+            'Dynamic role names are limited to 28 characters in Neos 9, rename first: ' . implode(', ', array_map(static fn (mixed $name): string => is_string($name) ? $name : '', $tooLongNames))
+        );
+        $viewOnlyNames = $this->connection->fetchFirstColumn("SELECT name FROM sandstorm_neosacl_domain_model_dynamicrole WHERE privilege = 'view' OR matcher LIKE '%whitelistedNodeTypes\":[\"%'");
+        $this->warnIf(
+            $viewOnlyNames !== [],
+            'These roles lose their view-only level or node type filter and grant editing of the selected subtrees: ' . implode(', ', array_map(static fn (mixed $name): string => is_string($name) ? $name : '', $viewOnlyNames))
+        );
+
         $this->addSql('ALTER TABLE sandstorm_neosacl_domain_model_dynamicrole ADD subtreetag VARCHAR(36) NOT NULL DEFAULT \'\'');
         $this->addSql('UPDATE sandstorm_neosacl_domain_model_dynamicrole SET subtreetag = \'neosacl-\' || LOWER(name)');
         $this->addSql('ALTER TABLE sandstorm_neosacl_domain_model_dynamicrole ALTER COLUMN subtreetag DROP DEFAULT');
