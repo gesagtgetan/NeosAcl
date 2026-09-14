@@ -54,10 +54,10 @@ class DynamicRoleController extends AbstractModuleController
 
     public function indexAction(): void
     {
-        $contentRepositoryId = $this->contentRepositoryId();
         $listItems = [];
         foreach ($this->dynamicRoleRepository->findAllOrderedByName() as $dynamicRole) {
             $matcher = $dynamicRole->getMatcherConfiguration();
+            $contentRepositoryId = $matcher->contentRepositoryId;
             $listItems[] = new DynamicRoleListItem(
                 $this->identifierOf($dynamicRole),
                 $dynamicRole->getName(),
@@ -108,25 +108,22 @@ class DynamicRoleController extends AbstractModuleController
     public function createAction(string $name, bool $abstract = false, array $parentRoleNames = [], array $selectedWorkspaces = [], array $selectedDimensionSpacePoints = [], array $selectedNodes = []): void
     {
         try {
-            if ($this->dynamicRoleRepository->findOneByName($name) !== null) {
-                throw InvalidDynamicRoleException::forDuplicateName($name);
-            }
             $dynamicRole = new DynamicRole(
                 $name,
                 $abstract,
+                $this->existingRoleIdentifiers($parentRoleNames),
+                $this->matcherFromSelection($this->contentRepositoryId(), $selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
+            );
             if ($this->dynamicRoleRepository->findOneBySubtreeTag($dynamicRole->getSubtreeTag()->value) !== null) {
                 throw InvalidDynamicRoleException::forDuplicateName($name);
             }
-                $this->existingRoleIdentifiers($parentRoleNames),
-                $this->matcherFromSelection($selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
-            );
         } catch (InvalidDynamicRoleException $exception) {
             $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
             $this->redirect('new');
-        $this->persistenceManager->persistAll();
         }
 
         $this->dynamicRoleRepository->add($dynamicRole);
+        $this->persistenceManager->persistAll();
         $this->dynamicRoleApplier->apply($dynamicRole);
         $this->addFlashMessage(sprintf('Created the dynamic role "%s". Editors see the change after their workspace was rebased.', $dynamicRole->getRoleIdentifier()));
         $this->redirect('index');
@@ -136,7 +133,7 @@ class DynamicRoleController extends AbstractModuleController
     {
         $this->view->assignMultiple([
             'formData' => DynamicRoleFormData::fromDynamicRole($this->identifierOf($dynamicRole), $dynamicRole),
-            'formOptions' => $this->formOptionsFactory->create($this->contentRepositoryId(), $dynamicRole, $this->nodeTreeLoadingDepth, $this->childrenEndpoint()),
+            'formOptions' => $this->formOptionsFactory->create($dynamicRole->getMatcherConfiguration()->contentRepositoryId, $dynamicRole, $this->nodeTreeLoadingDepth, $this->childrenEndpoint()),
         ]);
     }
 
@@ -154,15 +151,15 @@ class DynamicRoleController extends AbstractModuleController
             $dynamicRole->update(
                 $abstract,
                 $this->existingRoleIdentifiers($parentRoleNames),
-                $this->matcherFromSelection($selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
+                $this->matcherFromSelection($dynamicRole->getMatcherConfiguration()->contentRepositoryId, $selectedWorkspaces, $selectedDimensionSpacePoints, $selectedNodes),
             );
         } catch (InvalidDynamicRoleException $exception) {
             $this->addFlashMessage($exception->getMessage(), '', Message::SEVERITY_ERROR);
             $this->redirect('edit', null, null, ['dynamicRole' => $dynamicRole]);
-        $this->persistenceManager->persistAll();
         }
 
         $this->dynamicRoleRepository->update($dynamicRole);
+        $this->persistenceManager->persistAll();
         $this->dynamicRoleApplier->apply($dynamicRole);
         $this->addFlashMessage(sprintf('Updated the dynamic role "%s". Editors see the change after their workspace was rebased.', $dynamicRole->getRoleIdentifier()));
         $this->redirect('index');
@@ -170,8 +167,6 @@ class DynamicRoleController extends AbstractModuleController
 
     public function removeAction(DynamicRole $dynamicRole): void
     {
-        $this->dynamicRoleApplier->revoke($dynamicRole);
-        $this->dynamicRoleRepository->remove($dynamicRole);
         $childRoles = $this->dynamicRoleRepository->findChildRoles($dynamicRole);
         if ($childRoles !== []) {
             $this->addFlashMessage(
@@ -181,6 +176,8 @@ class DynamicRoleController extends AbstractModuleController
             );
             $this->redirect('index');
         }
+        $this->dynamicRoleApplier->revoke($dynamicRole);
+        $this->dynamicRoleRepository->remove($dynamicRole);
         $this->addFlashMessage(sprintf('Deleted the dynamic role "%s".', $dynamicRole->getRoleIdentifier()));
         $this->redirect('index');
     }
@@ -225,14 +222,13 @@ class DynamicRoleController extends AbstractModuleController
     }
 
     /**
+     * @param ContentRepositoryId $contentRepositoryId
      * @param array<string> $selectedWorkspaces
      * @param array<string> $selectedDimensionSpacePoints
      * @param array<string> $selectedNodes
      */
-    private function matcherFromSelection(array $selectedWorkspaces, array $selectedDimensionSpacePoints, array $selectedNodes): MatcherConfiguration
+    private function matcherFromSelection(ContentRepositoryId $contentRepositoryId, array $selectedWorkspaces, array $selectedDimensionSpacePoints, array $selectedNodes): MatcherConfiguration
     {
-        $contentRepositoryId = $this->contentRepositoryId();
-
         return MatcherConfiguration::fromSubmittedSelection(
             $contentRepositoryId,
             $selectedWorkspaces,
